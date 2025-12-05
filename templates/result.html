@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .result-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+        .success-icon { color: #28a745; }
+        .fail-icon { color: #dc3545; }
+    </style>
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <h1 class="page-title">{{ title }}</h1>
+
+    <div class="card" style="text-align: center;">
+        
+        {% if success %}
+            <div class="result-icon success-icon">✅</div>
+        {% else %}
+            <div class="result-icon fail-icon">❌</div>
+        {% endif %}
+        
+        <p class="page-subtitle" style="margin-bottom: 0;">{{ message }}</p>
+
+        <div class="action-area">
+            <a href="{{ url_for('index') }}" class="btn">처음으로 돌아가기</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

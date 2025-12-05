@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>에베레스트 멤버십 가입</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <h1 class="page-title">에베레스트 멤버십 가입</h1>
+    <p class="page-subtitle">지점: {{ branch }}</p>
+
+    <div class="card">
+
+        <form action="/join" method="post">
+            <input type="hidden" name="branch" value="{{ branch }}">
+            <input type="hidden" name="phone" value="{{ phone }}">
+
+            <label class="label">이름</label>
+            <input type="text" name="name" required>
+
+            <label class="label">전화번호</label>
+            <input type="tel" name="phone" value="{{ phone }}" required>
+
+            <label class="label">생년월일</label>
+            <input type="date" name="birth" required>
+
+            <div class="checkbox-row">
+                <input type="checkbox" name="agree_marketing" value="yes">
+                <label>마케팅 정보 수신 동의 (선택)</label>
+            </div>
+
+            <div class="checkbox-row">
+                <input type="checkbox" name="agree_privacy" value="yes" required>
+                <label>개인정보 수집·이용 동의 (필수)</label>
+            </div>
+
+            <button type="submit" class="btn">가입하기</button>
+        </form>
+
+    </div>
+
+</div>
+</body>
+</html>

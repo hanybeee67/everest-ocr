@@ -1,0 +1,197 @@
+/* ============================
+   GLOBAL RESET
+============================ */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: #f2f2f2;
+    color: #222;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* ============================
+   PAGE WRAPPER
+============================ */
+.page {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 16px;
+}
+
+/* ============================
+   HEADER
+============================ */
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.header .sub {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 6px;
+}
+
+/* ============================
+   CARD (컨텐츠 박스)
+============================ */
+.card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px 20px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    width: 100%;
+}
+
+.card-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ============================
+   BUTTONS
+============================ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 20px;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+}
+
+.btn-full {
+    width: 100%;
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, #d07a20, #b55b15);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(181, 91, 21, 0.40);
+}
+
+.btn.secondary {
+    background: #ffffff;
+    color: #b55b15;
+    border: 2px solid rgba(181, 91, 21, 0.40);
+}
+
+/* ============================
+   FORM
+============================ */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+    display: block;
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="file"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #d0d0d0;
+    font-size: 1.05rem;
+    background: #fafafa;
+}
+
+input:focus {
+    outline: none;
+    border-color: #d07a20;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(208,122,32,0.25);
+}
+
+/* ============================
+   CHECKBOX
+============================ */
+.checkbox-group label {
+    font-size: 1rem;
+}
+
+/* ============================
+   ALERT BOXES
+============================ */
+.alert {
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    margin-bottom: 16px;
+}
+
+.alert-error {
+    background: #ffecec;
+    color: #c0392b;
+    border: 1px solid #f5b5b5;
+}
+
+/* ============================
+   TABLE (관리자 페이지)
+============================ */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #ececec;
+    white-space: nowrap;
+}
+
+th {
+    background: #faf4eb;
+    font-weight: 600;
+}
+
+/* ============================
+   MOBILE OPTIMIZATION
+============================ */
+@media (max-width: 480px) {
+    body {
+        font-size: 1.05rem;
+    }
+
+    .card {
+        padding: 20px 16px;
+    }
+
+    .header h1 {
+        font-size: 1.6rem;
+    }
+
+    .btn {
+        font-size: 1.05rem;
+        padding: 12px 18px;
+    }
+}

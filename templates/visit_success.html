@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재방문 적립 완료</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="header">
+        <h1>적립 완료</h1>
+        <div class="sub">{{ member.branch }} 지점 방문이 적립되었습니다.</div>
+    </div>
+
+    <div class="card">
+
+        <p><strong>{{ member.name }}</strong> 님</p>
+        <p>현재 방문 횟수: <strong>{{ member.visit_count }}회</strong></p>
+
+        {% if coupons %}
+        <div class="alert alert-success">
+            🎉 이번 방문에서 새로 발급된 쿠폰 {{ coupons|length }}개!
+            <ul>
+                {% for c in coupons %}
+                <li>{{ c }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            이번 방문에서는 새 쿠폰이 발급되지 않았습니다.
+        </div>
+        {% endif %}
+
+        <a href="/" class="btn primary btn-full">메인으로 돌아가기</a>
+
+    </div>
+
+</div>
+
+</body>
+</html>

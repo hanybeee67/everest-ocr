@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원 관리</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .card {
+            padding: 20px;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            margin-top: 20px;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .sort-buttons a {
+            padding: 6px 12px;
+            background: #eee;
+            border-radius: 8px;
+            font-size: 14px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .sort-buttons a.active {
+            background: #005bcc;
+            color: white;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 680px;
+        }
+
+        thead th {
+            background: #f7f7f7;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1.5px solid #e0e0e0;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .btn-print {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px;
+            background: linear-gradient(90deg, #d17a00, #c46700);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="header">
+        <h1>회원 관리</h1>
+        <div class="sub">지점별 · 이름순 · 가입일순 조회</div>
+    </div>
+
+    <div class="card">
+
+        <div class="sort-buttons">
+            <a href="/admin/members?sort=date" class="{% if sort == 'date' %}active{% endif %}">
+                가입일순
+            </a>
+            <a href="/admin/members?sort=name" class="{% if sort == 'name' %}active{% endif %}">
+                이름순
+            </a>
+            <a href="/admin/members?sort=branch" class="{% if sort == 'branch' %}active{% endif %}">
+                지점순
+            </a>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>지점</th>
+                        <th>이름</th>
+                        <th>전화번호</th>
+                        <th>생년월일</th>
+                        <th>방문횟수</th>
+                        <th>가입일</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for m in members %}
+                    <tr>
+                        <td>{{ m.branch }}</td>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.phone }}</td>
+                        <td>{{ m.birth }}</td>
+                        <td>{{ m.visit_count }}</td>
+                        <td>{{ m.join_date.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <a href="#" onclick="window.print()" class="btn-print">
+            전체 목록 프린트
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>

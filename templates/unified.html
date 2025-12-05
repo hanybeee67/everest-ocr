@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>에베레스트 멤버십</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <h1 class="page-title">에베레스트 멤버십</h1>
+    <p class="page-subtitle">지점: {{ branch }}</p>
+
+    <div class="card">
+        <p class="info-text">전화번호를 입력하면 신규 / 재방문 여부를 자동으로 확인합니다.</p>
+
+        <form action="/unified" method="post">
+            <input type="hidden" name="branch" value="{{ branch }}">
+
+            <label class="label">전화번호</label>
+            <input type="tel" name="phone" placeholder="숫자만 입력" required>
+
+            <button type="submit" class="btn">확인</button>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

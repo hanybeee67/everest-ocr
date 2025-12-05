@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>영수증 이미지 업로드</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+<div class="page-wrapper">
+
+    <h1 class="page-title">{{ name }}님, 환영합니다!</h1>
+    <p class="page-subtitle">결제하신 **영수증 사진**을 올려주세요. (JPG/PNG)</p>
+
+    <div class="card">
+        <form action="{{ url_for('receipt_process') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="member_id" value="{{ member_id }}">
+            
+            <label class="label">영수증 사진 업로드</label>
+            <input type="file" name="receipt_image" accept="image/*" required>
+
+            <button type="submit" class="btn">영수증 등록 및 쿠폰 확인</button>
+        </form>
+        
+        <p style="margin-top: 15px; font-size: 14px; color: #777;">
+        💡 사진은 **승인번호**와 **결제 금액**이 선명하게 나오도록 찍어주세요.
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

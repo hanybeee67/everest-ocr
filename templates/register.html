@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신규가입</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="header">
+        <h1>신규가입</h1>
+        <div class="sub">에베레스트 멤버십 신규 고객 등록</div>
+    </div>
+
+    <div class="card">
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form action="/register" method="post">
+
+            <div class="form-group">
+                <label>지점명</label>
+                <input type="text" name="branch" value="{{ branch }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>이름</label>
+                <input type="text" name="name" placeholder="예: 홍길동" required>
+            </div>
+
+            <div class="form-group">
+                <label>전화번호</label>
+                <input type="tel" name="phone" placeholder="예: 01012345678" required>
+            </div>
+
+            <div class="form-group">
+                <label>생년월일</label>
+                <input type="text" name="birth" placeholder="YYYYMMDD">
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label><input type="checkbox" name="marketing"> 마케팅 수신 동의</label><br>
+                <label><input type="checkbox" name="privacy" required> 개인정보 수집 동의(필수)</label>
+            </div>
+
+            <button class="btn primary btn-full" type="submit">가입 완료</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>
