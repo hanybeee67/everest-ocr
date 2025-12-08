@@ -5,8 +5,8 @@ import io
 import re
 import json
 # 아래 라이브러리는 import만 하고 실제 OCR 함수에서는 사용되지 않습니다.
-from google.cloud import vision 
-from PIL import Image 
+#from google.cloud import vision 
+#from PIL import Image 
 from datetime import datetime
 
 # ============================================

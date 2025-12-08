@@ -2,32 +2,94 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>영수증 이미지 업로드</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>영수증 업로드</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
-<div class="page-wrapper">
 
-    <h1 class="page-title">{{ name }}님, 환영합니다!</h1>
-    <p class="page-subtitle">결제하신 **영수증 사진**을 올려주세요. (JPG/PNG)</p>
-
-    <div class="card">
-        <form action="{{ url_for('receipt_process') }}" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="member_id" value="{{ member_id }}">
-            
-            <label class="label">영수증 사진 업로드</label>
-            <input type="file" name="receipt_image" accept="image/*" required>
-
-            <button type="submit" class="btn">영수증 등록 및 쿠폰 확인</button>
-        </form>
+    <div class="page-wrapper">
         
-        <p style="margin-top: 15px; font-size: 14px; color: #777;">
-        💡 사진은 **승인번호**와 **결제 금액**이 선명하게 나오도록 찍어주세요.
+        <div class="brand-logo">EVEREST MEMBERSHIP</div>
+
+        <h1 class="welcome-title">
+            <span style="color: #ff7f3f;">{{ name }}</span>님,<br>환영합니다!
+        </h1>
+        
+        <p class="welcome-desc">
+            {% if branch_name %}
+                현재 <span class="branch-highlight" style="font-weight: 700;">{{ branch_name }}</span>에 계시군요.<br>
+            {% endif %}
+            영수증 사진을 찍어 올려주세요.
         </p>
+
+        <div class="mobile-card">
+            <form action="/receipt/process" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="member_id" value="{{ member_id }}">
+                
+                <div class="input-group">
+                    <label class="input-label" style="text-align: center; margin-bottom: 15px;">영수증 사진 촬영</label>
+                    
+                    <div class="file-upload-wrapper" id="uploadBox">
+                        <i class="fa-solid fa-camera upload-icon"></i>
+                        <span class="upload-text" id="uploadText">
+                            터치하여 <em>사진 촬영</em><br>또는 앨범 선택
+                        </span>
+
+                        <input type="file" 
+                               name="receipt_image" 
+                               id="fileInput" 
+                               class="file-input-hidden" 
+                               accept="image/*" 
+                               capture="environment"
+                               required>
+                               
+                        <img id="previewImg" class="preview-img" src="" alt="미리보기">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    영수증 등록 및 혜택받기
+                </button>
+            </form>
+
+            <p style="font-size: 13px; color: #aaa; margin-top: 20px; line-height: 1.5;">
+                <i class="fa-solid fa-circle-info"></i> 팁: <strong>승인번호</strong>와 <strong>결제금액</strong>이<br>
+                잘 보이게 찍어주세요.
+            </p>
+        </div>
+
+        <div class="footer-text">
+            <a href="/" style="text-decoration: none; color: #ccc;">처음으로 돌아가기</a>
+        </div>
+
     </div>
 
-</div>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const previewImg = document.getElementById('previewImg');
+        const uploadBox = document.getElementById('uploadBox');
+        const uploadText = document.getElementById('uploadText');
+        const icon = document.querySelector('.upload-icon');
+
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block'; // 이미지 보이기
+                    
+                    // 텍스트와 아이콘 숨기기
+                    uploadText.style.opacity = '0';
+                    icon.style.opacity = '0';
+                    uploadBox.style.borderStyle = 'solid'; // 테두리 실선으로 변경
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+
 </body>
 </html>

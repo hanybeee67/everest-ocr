@@ -1,203 +1,239 @@
+/* static/style.css (최종 디자인 - 업로드 스타일 포함) */
+
 /* ===============================
    기본 세팅 (폰트 & 배경)
 ================================ */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    background-color: #f4f6f9; /* 더 차분한 회색 배경 */
+    background-color: #f4f6f9;
     font-family: "Noto Sans KR", sans-serif;
     color: #333;
     line-height: 1.6;
 }
 
-a {
-    text-decoration: none;
-    color: inherit;
-    transition: 0.2s;
+/* ===============================
+   레이아웃 & 컨테이너
+================================ */
+.page-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* ===============================
-   레이아웃
+   [Mobile] 공통 디자인 요소
 ================================ */
-.page-wrapper {
-    max-width: 1200px;
-    margin: 40px auto;
-    padding: 0 20px;
-}
-
-.page-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #111;
-    margin-bottom: 20px;
-    border-left: 5px solid #ff7f3f; /* 포인트 컬러바 */
-    padding-left: 15px;
-}
-
-.page-subtitle {
+.brand-logo {
+    text-align: center;
+    margin-bottom: 10px;
     font-size: 16px;
+    font-weight: 500;
+    color: #888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.welcome-title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 900;
+    color: #222;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.branch-highlight {
+    color: #ff7f3f;
+    display: inline-block;
+    position: relative;
+}
+
+.branch-highlight::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 127, 63, 0.2);
+    z-index: -1;
+    border-radius: 4px;
+}
+
+.welcome-desc {
+    text-align: center;
     color: #666;
+    font-size: 15px;
     margin-bottom: 30px;
 }
 
-/* ===============================
-   카드 스타일 (박스 디자인)
-================================ */
-.card {
+.mobile-card {
     background: #fff;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* 부드러운 그림자 */
-    margin-bottom: 24px;
-}
-
-/* ===============================
-   통계 요약 테이블 (상단)
-================================ */
-.stats-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
-}
-
-.stat-card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 30px 25px;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
     text-align: center;
+    transition: transform 0.3s ease;
 }
 
-.stat-card h3 {
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-label {
+    display: block;
     font-size: 14px;
-    color: #888;
+    font-weight: 700;
+    color: #555;
+    margin-bottom: 8px;
+    margin-left: 5px;
+}
+
+.styled-input {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    background: #f9f9f9;
+    border: 2px solid #eee;
+    border-radius: 16px;
+    outline: none;
+    transition: 0.3s;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.styled-input:focus {
+    border-color: #ff7f3f;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 127, 63, 0.1);
+}
+
+.btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #ff7f3f, #ff6b2b);
+    color: #fff;
+    border: none;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 107, 43, 0.3);
+    transition: 0.2s;
+    margin-top: 10px;
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.footer-text {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 13px;
+    color: #aaa;
+}
+
+/* ===============================
+   ★ [신규] 파일 업로드 박스 디자인
+================================ */
+.file-upload-wrapper {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: #fafafa;
+    border: 2px dashed #ddd;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.file-upload-wrapper:hover, .file-upload-wrapper.active {
+    border-color: #ff7f3f;
+    background: #fff8f5;
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: #ccc;
     margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+.file-upload-wrapper:hover .upload-icon {
+    color: #ff7f3f;
+    transform: scale(1.1);
+}
+
+.upload-text {
+    font-size: 15px;
+    color: #888;
     font-weight: 500;
 }
 
-.stat-card .value {
-    font-size: 24px;
-    font-weight: 800;
-    color: #333;
-}
-
-/* ===============================
-   버튼 스타일
-================================ */
-.btn {
-    display: inline-block;
-    background: #ff7f3f;
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-}
-
-.btn:hover {
-    background: #e06526;
-}
-
-.small-btn {
-    padding: 8px 16px;
-    font-size: 14px;
-    margin-left: 8px;
-}
-
-/* ===============================
-   툴바 (정렬 & 프린트)
-================================ */
-.toolbar {
-    display: flex;
-    justify-content: flex-end; /* 오른쪽 정렬 */
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 10px;
-}
-
-.admin-select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-.print-btn {
-    background: #555;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-/* ===============================
-   ★ 핵심: 데이터 테이블 디자인 개선
-================================ */
-.table-wrapper {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    overflow: hidden; /* 둥근 모서리 유지 */
-    margin-bottom: 50px;
-}
-
-.member-table {
-    width: 100%;
-    border-collapse: collapse; /* 테두리 겹침 제거 (중요) */
-    table-layout: fixed; /* ★ 칸 너비 균등 분배 또는 지정된 너비 준수 */
-}
-
-/* 테이블 헤더 */
-.member-table thead th {
-    background-color: #f8f9fa; /* 아주 연한 회색 */
-    color: #444;
+.upload-text em {
+    font-style: normal;
     font-weight: 700;
-    padding: 16px;
-    font-size: 15px;
-    border-bottom: 2px solid #eee;
-    text-align: center; /* 헤더 글자 가운데 정렬 */
-}
-
-/* 테이블 내용 */
-.member-table tbody td {
-    padding: 16px 12px;
-    border-bottom: 1px solid #f1f1f1;
-    font-size: 14px;
     color: #555;
-    text-align: center; /* 내용 글자 가운데 정렬 */
-    white-space: nowrap; /* 줄바꿈 방지 */
-    overflow: hidden;
-    text-overflow: ellipsis; /* 내용 넘치면 ... 처리 */
 }
 
-/* 짝수 줄 배경색 (가독성 향상) */
-.member-table tbody tr:nth-child(even) {
-    background-color: #fcfcfc;
+/* 실제 파일 input은 숨김 */
+.file-input-hidden {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
 }
 
-/* 마우스 올렸을 때 효과 */
-.member-table tbody tr:hover {
-    background-color: #fff8f0; /* 아주 연한 오렌지빛 */
+/* 파일 선택 후 미리보기 이미지 */
+.preview-img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 18px;
+    display: none; /* JS로 활성화 */
 }
+
 
 /* ===============================
-   반응형 처리
+   관리자 페이지 스타일 (유지)
 ================================ */
-@media (max-width: 768px) {
-    .table-wrapper {
-        overflow-x: auto; /* 모바일에서 가로 스크롤 허용 */
-    }
-    .member-table {
-        min-width: 600px; /* 모바일에서도
+.admin-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+.page-title { font-size: 28px; font-weight: 700; color: #111; margin-bottom: 20px; border-left: 5px solid #ff7f3f; padding-left: 15px; }
+.stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+.stat-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); text-align: center; }
+.stat-card h3 { font-size: 14px; color: #888; margin-bottom: 10px; }
+.stat-card .value { font-size: 24px; font-weight: 800; color: #333; }
+.table-wrapper { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 50px; }
+.member-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.member-table th { background-color: #f8f9fa; padding: 16px; font-size: 15px; text-align: center; border-bottom: 2px solid #eee; }
+.member-table td { padding: 16px 12px; border-bottom: 1px solid #f1f1f1; font-size: 14px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.member-table tr:hover { background-color: #fff8f0; }
+.toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; }
+.print-btn, .small-btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; background: #555; color: #fff; }
+.small-btn { background: #ff7f3f; }
