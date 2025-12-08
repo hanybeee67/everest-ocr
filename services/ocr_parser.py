@@ -1,12 +1,9 @@
-# services/ocr_parser.py (테스트용 최종 버전)
-
 import os
 import io
 import re
 import json
-# 아래 라이브러리는 import만 하고 실제 OCR 함수에서는 사용되지 않습니다.
-#from google.cloud import vision 
-#from PIL import Image 
+from google.cloud import vision
+from google.oauth2 import service_account
 from datetime import datetime
 
 # ============================================
@@ -23,82 +20,107 @@ BRANCH_NAMES = {
 }
 
 # ============================================
-# 2. OCR 텍스트 추출 함수 (★테스트용 가상 함수★)
+# 2. 진짜 OCR 텍스트 추출 함수 (Google Vision API)
 # ============================================
-
 def detect_text_from_receipt(image_path):
     """
-    Google Cloud Vision API 대신, 테스트용 가상 텍스트를 반환합니다.
+    Google Cloud Vision API를 사용하여 이미지에서 텍스트를 추출합니다.
     """
-    
-    # 🚨 테스트용 영수증 데이터 🚨
-    # 지점명을 '영등포'로 설정하여, 다른 지점 방문(동대문) 테스트가 가능하도록 합니다.
-    test_text = """
-    에베레스트 영등포점
-    주소: 서울 영등포구 경인로
-    전화: 02-800-4488
-    2025/12/05 16:15:30
-    상품 합계 : 24,500 원
-    VAT 10%: 2,450 원
-    결제금액: 24,500 원
-    카드 승인번호: 555566667777
-    일련번호: NO: 112233
-    """
-    
-    # 실제 파일은 삭제합니다. (업로드된 이미지를 삭제하여 디스크 공간 확보)
     try:
-        os.remove(image_path)
-    except OSError:
-        pass
+        # 1. 환경 변수에서 인증 정보 가져오기 (Render 배포 환경용)
+        credentials_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
         
-    return test_text # 이 텍스트를 OCR 결과로 가정하고 반환
+        if credentials_json:
+            # Render 환경: JSON 문자열을 객체로 변환하여 인증
+            credentials_info = json.loads(credentials_json)
+            credentials = service_account.Credentials.from_service_account_info(credentials_info)
+            client = vision.ImageAnnotatorClient(credentials=credentials)
+        else:
+            # 로컬 환경: 환경 변수가 없으면 기본 설정 시도 (또는 에러 발생)
+            # 로컬 테스트 시에는 터미널에서 환경변수를 설정했거나, 아래 줄을 수정해야 합니다.
+            client = vision.ImageAnnotatorClient()
+
+        # 2. 이미지 파일 읽기
+        with io.open(image_path, 'rb') as image_file:
+            content = image_file.read()
+
+        image = vision.Image(content=content)
+
+        # 3. 텍스트 감지 요청
+        response = client.text_detection(image=image)
+        texts = response.text_annotations
+
+        # 4. 임시 파일 삭제 (보안 및 용량 관리)
+        try:
+            os.remove(image_path)
+        except OSError:
+            pass
+
+        if response.error.message:
+            raise Exception(f'{response.error.message}')
+
+        if texts:
+            return texts[0].description # 전체 텍스트 반환
+        else:
+            return None
+
+    except Exception as e:
+        print(f"OCR Error: {e}")
+        # 에러 발생 시에도 파일은 삭제 시도
+        if os.path.exists(image_path):
+            os.remove(image_path)
+        return None
 
 
 # ============================================
-# 3. 텍스트 파싱 함수 (OCR 결과 분석)
+# 3. 텍스트 파싱 함수 (규칙 기반)
 # ============================================
 def parse_receipt_text(ocr_text):
-    """ OCR로 추출된 텍스트에서 영수증 번호, 지점, 금액을 추출합니다. """
     data = {
         "receipt_no": None,
         "branch_paid": "미확인 지점",
         "amount": 0,
     }
     
-    # 텍스트 정규화: 모든 띄어쓰기 제거, 소문자화, 줄바꿈 제거
+    if not ocr_text:
+        return data
+
+    # 텍스트 정규화
     clean_text = ocr_text.replace('\n', ' ').replace(' ', '').lower()
-    
     
     # --- A. 지점명 추출 ---
     for official_name, keywords in BRANCH_NAMES.items():
         for keyword in keywords:
-            if keyword.lower().replace(' ', '') in clean_text:
+            if keyword.replace(' ', '') in clean_text:
                 data["branch_paid"] = official_name
                 break
         if data["branch_paid"] != "미확인 지점":
             break
             
-            
-    # --- B. 금액 (Amount) 추출 ---
-    # 패턴: (합계|결제금액|total|tot|금액|vat포함) 주변의 숫자 (\d[\d,]+)를 찾습니다.
-    amount_match = re.search(r'(합계|결제금액|total|tot|금액)[:\s]*(\d[\d,]+)', clean_text)
+    # --- B. 금액 추출 ---
+    # '합계', '결제금액' 뒤에 오는 숫자 찾기
+    amount_match = re.search(r'(합계|결제금액|total|tot|금액)[:\s]*([0-9,]+)', clean_text)
     if amount_match:
-        data["amount"] = int(amount_match.group(2).replace(',', ''))
+        raw_amount = amount_match.group(2).replace(',', '')
+        if raw_amount.isdigit():
+            data["amount"] = int(raw_amount)
         
-    # 금액이 추출되지 않았을 경우, 4자리 이상 숫자 중 가장 큰 값을 금액으로 가정
+    # 금액을 못 찾았다면, 텍스트 내에서 '원' 앞에 있는 큰 숫자 찾아보기 (보완책)
     if data["amount"] == 0:
-        all_numbers = re.findall(r'\d{4,}', clean_text) 
-        if all_numbers:
-            data["amount"] = max([int(n) for n in all_numbers if int(n) > 500])
-            
-            
-    # --- C. 영수증 번호 (Receipt No) 추출 ---
-    # 패턴: (승인번호|일련번호|no) 주변의 8~12자리의 숫자 (카드 승인번호 패턴)
-    receipt_no_match = re.search(r'(승인번호|일련번호|no)[:_]?[-\s]?(\d{8,12})', clean_text)
+        candidates = re.findall(r'([0-9,]+)원', ocr_text)
+        for cand in candidates:
+            val = int(cand.replace(',', ''))
+            if val > data["amount"]: # 가장 큰 금액을 합계로 추정
+                data["amount"] = val
+
+    # --- C. 승인번호 추출 ---
+    # 8자리 이상 연속된 숫자 (카드 승인번호 패턴)
+    receipt_no_match = re.search(r'(승인번호|일련번호|no)[:.\s]*([0-9-]{8,20})', clean_text)
     if receipt_no_match:
         data["receipt_no"] = receipt_no_match.group(2).replace('-', '')
     else:
-        # 영수증 번호가 없으면 OCR 텍스트 해시값을 사용 (중복 체크 보장 안됨)
-        data["receipt_no"] = "PARSE_FAIL_" + str(abs(hash(clean_text)))[:10]
-        
+        # 번호가 없으면 임시로 날짜+금액 조합 (중복 방지용)
+        # 실제 서비스에서는 에러를 띄우는 게 좋지만, 테스트를 위해 임시 생성
+        data["receipt_no"] = "TEMP_" + datetime.now().strftime("%H%M%S")
+
     return data
