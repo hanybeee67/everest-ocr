@@ -1,4 +1,4 @@
-# app.py
+# app.py 파일 전체 (파일 처리 안정화 버전)
 
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -8,13 +8,16 @@ import os
 import uuid
 import json
 
-# ★ 새로 만든 모듈 import (services 디렉토리가 있어야 함)
+# ★ 새로 만든 모듈 import
 from services.ocr_parser import detect_text_from_receipt, parse_receipt_text
 from services.coupon_manager import issue_coupon_if_qualified
 
 
-app = Flask(__name__, instance_path=os.getcwd() + '/instance') # instance_path 설정
-os.makedirs(app.instance_path, exist_ok=True) # instance 폴더가 없으면 생성
+# ★★★ 수정 사항: instance_path를 현재 디렉토리 기준으로 절대 경로로 명시하여 안정화
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, instance_path=os.path.join(APP_ROOT, 'instance'))
+os.makedirs(app.instance_path, exist_ok=True)
+
 
 # ===== DB 설정 =====
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
@@ -22,7 +25,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# ===== DB 모델 정의 =====
+# ===== DB 모델 정의 (이전과 동일하게 유지) =====
 class Members(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
@@ -39,9 +42,6 @@ class Members(db.Model):
     coupons = db.relationship('Coupons', backref='member', lazy=True)
 
 
-# ----------------------------------------------------------------------
-# ★ 신규 테이블 1: 영수증 기록 테이블 (OCR 결과 저장소)
-# ----------------------------------------------------------------------
 class Receipts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     member_id = db.Column(db.Integer, db.ForeignKey('members.id'), nullable=False)
@@ -51,9 +51,6 @@ class Receipts(db.Model):
     visit_date = db.Column(db.DateTime, default=datetime.now)
     is_coupon_used = db.Column(db.Boolean, default=False) 
 
-# ----------------------------------------------------------------------
-# ★ 신규 테이블 2: 쿠폰 관리 테이블
-# ----------------------------------------------------------------------
 class Coupons(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     member_id = db.Column(db.Integer, db.ForeignKey('members.id'), nullable=False)
@@ -76,21 +73,18 @@ with app.app_context():
 # ============================================
 @app.route("/")
 def index():
-    # OCR 개발 테스트를 위해 영수증 등록 페이지로 바로 이동하도록 수정
     return redirect(url_for("receipt_entry"))
 
 
 # ============================================
-# 2) unified: 전화번호 입력 → 신규/재방문 분기 (기존 로직 유지)
+# 2) unified: 전화번호 입력 → 신규/재방문 분기
 # ============================================
 @app.route("/unified", methods=["GET", "POST"])
 def unified():
-    # GET: 지점 선택 화면에서 넘어옴 (기존 멤버십용)
     if request.method == "GET":
         branch = request.args.get("branch", None)
         return render_template("unified.html", branch=branch)
 
-    # POST: 전화번호 입력 후 처리
     phone = request.form.get("phone")
     branch = request.form.get("branch")
 
@@ -98,7 +92,6 @@ def unified():
     today = datetime.now().strftime("%Y-%m-%d")
 
     if exist:
-        # 기존 방문 횟수 증가 로직 (전화번호 입력 기반)
         if exist.last_visit != today:
             exist.visit_count += 1
             exist.last_visit = today
@@ -106,12 +99,11 @@ def unified():
 
         return render_template("visit.html", name=exist.name)
 
-    # 신규 가입
     return render_template("join.html", phone=phone, branch=branch)
 
 
 # ============================================
-# 3) 신규 가입 처리 (기존 로직 유지)
+# 3) 신규 가입 처리
 # ============================================
 @app.route("/join", methods=["POST"])
 def join():
@@ -144,13 +136,12 @@ def join():
 
 
 # ============================================
-# 4) 관리자 페이지 (기존 로직 유지)
+# 4) 관리자 페이지
 # ============================================
 @app.route("/admin/members")
 def admin_members():
     sort = request.args.get("sort", "date")
 
-    # 정렬 조건
     if sort == "name":
         members = Members.query.order_by(Members.name.asc()).all()
     elif sort == "branch":
@@ -160,13 +151,14 @@ def admin_members():
     else:
         members = Members.query.order_by(Members.id.desc()).all()
 
+    all_receipts = Receipts.query.order_by(Receipts.visit_date.desc()).all()
+
+
     # ===== 통계 값 계산 =====
     total_members = Members.query.count()
-
     today = datetime.now().strftime("%Y-%m-%d")
     today_members = Members.query.filter(Members.created_at.contains(today)).count()
 
-    # 지점별 회원수 
     branch_group = db.session.query(
         Members.branch,
         db.func.count(Members.branch)
@@ -177,7 +169,6 @@ def admin_members():
     else:
         top_branch_name, top_branch_count = "없음", 0
 
-    # 전체 방문 횟수 합산
     total_visits = db.session.query(db.func.sum(Members.visit_count)).scalar() or 0
 
     return render_template(
@@ -188,59 +179,73 @@ def admin_members():
         today_members=today_members,
         top_branch_name=top_branch_name,
         top_branch_count=top_branch_count,
-        total_visits=total_visits
+        total_visits=total_visits,
+        all_receipts=all_receipts
     )
 
 
 # ============================================
-# ★ 5) 영수증 업로드 화면 (전화번호 입력 → 파일 업로드)
+# 5) 영수증 업로드 화면
 # ============================================
 @app.route("/receipt/entry", methods=["GET", "POST"])
 def receipt_entry():
     if request.method == "GET":
         return render_template("unified_receipt_entry.html")
         
-    # POST: 전화번호 입력 처리
     phone = request.form.get("phone")
     member = Members.query.filter_by(phone=phone).first()
 
     if not member:
-        # 신규 가입 페이지로 유도 (지점 정보는 OCR로 추출 예정이므로 임시 값)
         return render_template("join.html", phone=phone, branch="영수증 등록") 
 
-    # 재방문 고객 확인 → 영수증 업로드 페이지로 이동
     return render_template("receipt_upload.html", member_id=member.id, name=member.name)
 
 
 # ============================================
-# ★ 6) 영수증 처리 및 쿠폰 발급 로직
+# 6) 영수증 처리 및 쿠폰 발급 로직
 # ============================================
 @app.route("/receipt/process", methods=["POST"])
 def receipt_process():
     member_id = request.form.get("member_id")
     member = Members.query.get(member_id)
 
+    ocr_result_text = None
+    image_path = None 
+    
     if 'receipt_image' not in request.files:
         return render_template("result.html", title="처리 오류", message="파일이 업로드되지 않았습니다.", success=False)
 
     file = request.files['receipt_image']
     
-    # 1. 파일 임시 저장
-    image_filename = str(uuid.uuid4()) + ".jpg"
-    image_path = os.path.join(app.instance_path, image_filename)
-    file.save(image_path)
-    
-    # 2. OCR 실행 및 텍스트 추출
-    ocr_result_text = detect_text_from_receipt(image_path)
-    
-    # 3. 임시 파일 삭제
-    os.remove(image_path)
+    try:
+        # 1. 파일 임시 저장
+        image_filename = str(uuid.uuid4()) + ".jpg"
+        image_path = os.path.join(app.instance_path, image_filename)
+        
+        if file.filename == '':
+             return render_template("result.html", title="처리 오류", message="업로드할 파일을 선택해주세요.", success=False)
+             
+        file.save(image_path)
+        
+        # 2. OCR 실행 및 텍스트 추출 (테스트 버전에서는 이 함수가 파일을 삭제함)
+        ocr_result_text = detect_text_from_receipt(image_path)
+        
+    except Exception as e:
+        # 파일 처리 과정 오류 발생 시
+        print(f"File processing error: {e}")
+        
+        # 오류 발생 시 파일 정리 (만약 ocr_parser 내에서 삭제가 실패했을 경우 대비)
+        if image_path and os.path.exists(image_path): 
+             os.remove(image_path)
+             
+        return render_template("result.html", title="처리 오류", message=f"파일 처리 중 예상치 못한 오류 발생. 오류: {e}", success=False)
+
     
     if not ocr_result_text:
+        # 이 라인에 도달했다면, ocr_parser.py에서 return None이 되었거나, 텍스트가 비어있음을 의미합니다.
         return render_template("result.html", title="처리 실패", message="영수증에서 텍스트를 인식하지 못했습니다. 명확한 사진으로 다시 시도해 주세요.", success=False)
 
-
-    # 4. OCR 텍스트 파싱 (services/ocr_parser.py 사용)
+    # 4. OCR 텍스트 파싱
     parsed_data = parse_receipt_text(ocr_result_text)
     
     receipt_no = parsed_data["receipt_no"]
@@ -267,7 +272,7 @@ def receipt_process():
     db.session.add(new_receipt)
     db.session.commit()
     
-    # 7. 쿠폰 발급 조건 확인 및 발급 (services/coupon_manager.py 사용)
+    # 7. 쿠폰 발급 조건 확인 및 발급
     coupon_issued = issue_coupon_if_qualified(db, Receipts, Coupons, member.id)
     
     if coupon_issued:

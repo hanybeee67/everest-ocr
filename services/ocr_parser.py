@@ -1,15 +1,16 @@
-# services/ocr_parser.py
+# services/ocr_parser.py (테스트용 최종 버전)
 
 import os
 import io
 import re
 import json
+# 아래 라이브러리는 import만 하고 실제 OCR 함수에서는 사용되지 않습니다.
 from google.cloud import vision 
 from PIL import Image 
 from datetime import datetime
 
 # ============================================
-# 1. OCR 지점명 정의
+# 1. OCR 지점명 정의 (파싱 로직 사용)
 # ============================================
 BRANCH_NAMES = {
     "동대문": ["에베레스트 동대문", "창신동", "동대문점"],
@@ -22,41 +23,39 @@ BRANCH_NAMES = {
 }
 
 # ============================================
-# 2. OCR 텍스트 추출 함수
+# 2. OCR 텍스트 추출 함수 (★테스트용 가상 함수★)
 # ============================================
+
 def detect_text_from_receipt(image_path):
-    """ Google Cloud Vision API를 호출하여 영수증 텍스트를 추출합니다. """
-    try:
-        # 환경 변수에서 JSON 키 정보를 읽어 클라이언트 생성
-        credentials_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-        if not credentials_json:
-            print("ERROR: GOOGLE_APPLICATION_CREDENTIALS_JSON 환경 변수가 설정되지 않았습니다.")
-            return None
-            
-        # JSON 문자열을 파싱하여 인증 정보로 사용
-        client = vision.ImageAnnotatorClient.from_service_account_info(
-            info=json.loads(credentials_json)
-        )
-    except Exception as e:
-        print(f"Error loading credentials: {e}")
-        return None
-
-    with io.open(image_path, 'rb') as image_file:
-        content = image_file.read()
-
-    image = vision.Image(content=content)
-
-    # DOCUMENT_TEXT_DETECTION 사용
-    response = client.text_detection(image=image)
+    """
+    Google Cloud Vision API 대신, 테스트용 가상 텍스트를 반환합니다.
+    """
     
-    if not response.text_annotations:
-        return None
+    # 🚨 테스트용 영수증 데이터 🚨
+    # 지점명을 '영등포'로 설정하여, 다른 지점 방문(동대문) 테스트가 가능하도록 합니다.
+    test_text = """
+    에베레스트 영등포점
+    주소: 서울 영등포구 경인로
+    전화: 02-800-4488
+    2025/12/05 16:15:30
+    상품 합계 : 24,500 원
+    VAT 10%: 2,450 원
+    결제금액: 24,500 원
+    카드 승인번호: 555566667777
+    일련번호: NO: 112233
+    """
+    
+    # 실제 파일은 삭제합니다. (업로드된 이미지를 삭제하여 디스크 공간 확보)
+    try:
+        os.remove(image_path)
+    except OSError:
+        pass
         
-    # 첫 번째 요소(인덱스 0)가 전체 텍스트를 포함합니다.
-    return response.text_annotations[0].description
+    return test_text # 이 텍스트를 OCR 결과로 가정하고 반환
+
 
 # ============================================
-# 3. 텍스트 파싱 함수
+# 3. 텍스트 파싱 함수 (OCR 결과 분석)
 # ============================================
 def parse_receipt_text(ocr_text):
     """ OCR로 추출된 텍스트에서 영수증 번호, 지점, 금액을 추출합니다. """
@@ -90,7 +89,7 @@ def parse_receipt_text(ocr_text):
     if data["amount"] == 0:
         all_numbers = re.findall(r'\d{4,}', clean_text) 
         if all_numbers:
-            data["amount"] = max([int(n) for n in all_numbers if int(n) > 500]) # 500원 이상만 고려
+            data["amount"] = max([int(n) for n in all_numbers if int(n) > 500])
             
             
     # --- C. 영수증 번호 (Receipt No) 추출 ---

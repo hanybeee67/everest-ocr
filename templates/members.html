@@ -2,145 +2,130 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>회원 관리</title>
-
+    <title>에베레스트 관리자</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <style>
-        .card {
-            padding: 20px;
-            border-radius: 16px;
-            background: #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            margin-top: 20px;
-        }
-
-        .sort-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-bottom: 16px;
-        }
-
-        .sort-buttons a {
-            padding: 6px 12px;
-            background: #eee;
-            border-radius: 8px;
-            font-size: 14px;
-            text-decoration: none;
-            color: #333;
-        }
-
-        .sort-buttons a.active {
-            background: #005bcc;
-            color: white;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            width: 100%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            min-width: 680px;
-        }
-
-        thead th {
-            background: #f7f7f7;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            border-bottom: 1.5px solid #e0e0e0;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        tbody td {
-            padding: 12px;
-            font-size: 14px;
-            border-bottom: 1px solid #f0f0f0;
-            white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background: #fafafa;
-        }
-
-        .btn-print {
-            width: 100%;
-            margin-top: 20px;
-            padding: 14px;
-            background: linear-gradient(90deg, #d17a00, #c46700);
-            color: white;
-            border-radius: 10px;
-            text-align: center;
-            display: block;
-        }
-    </style>
 </head>
 
 <body>
+<div class="page-wrapper">
 
-<div class="page">
+    <h1 class="page-title">관리자 대시보드</h1>
+    <p class="page-subtitle">현재 에베레스트 멤버십의 현황을 한눈에 확인하세요.</p>
 
-    <div class="header">
-        <h1>회원 관리</h1>
-        <div class="sub">지점별 · 이름순 · 가입일순 조회</div>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>전체 회원 수</h3>
+            <div class="value">{{ total_members }}명</div>
+        </div>
+        <div class="stat-card">
+            <h3>오늘 가입자</h3>
+            <div class="value" style="color: #ff7f3f;">{{ today_members }}명</div>
+        </div>
+        <div class="stat-card">
+            <h3>최다 방문 지점</h3>
+            <div class="value" style="font-size: 20px;">
+                {% if top_branch_name %}{{ top_branch_name }}{% else %}-{% endif %}
+            </div>
+        </div>
+        <div class="stat-card">
+            <h3>누적 방문 수</h3>
+            <div class="value">{{ total_visits }}회</div>
+        </div>
     </div>
 
-    <div class="card">
 
-        <div class="sort-buttons">
-            <a href="/admin/members?sort=date" class="{% if sort == 'date' %}active{% endif %}">
-                가입일순
-            </a>
-            <a href="/admin/members?sort=name" class="{% if sort == 'name' %}active{% endif %}">
-                이름순
-            </a>
-            <a href="/admin/members?sort=branch" class="{% if sort == 'branch' %}active{% endif %}">
-                지점순
-            </a>
+    <div style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 10px; margin-top: 40px;">
+        <h2 class="page-title" style="margin: 0; border: none; padding: 0; font-size: 22px;">📋 회원 목록</h2>
+        
+        <div class="toolbar" style="margin: 0;">
+            <form method="get" class="sort-area" style="display: flex; align-items: center;">
+                <select name="sort" class="admin-select">
+                    <option value="date"   {% if sort=='date'   %}selected{% endif %}>가입일순</option>
+                    <option value="name"   {% if sort=='name'   %}selected{% endif %}>이름순</option>
+                    <option value="branch" {% if sort=='branch' %}selected{% endif %}>지점순</option>
+                    <option value="visit"  {% if sort=='visit'  %}selected{% endif %}>방문횟수순</option>
+                </select>
+                <button class="btn small-btn">보기</button>
+            </form>
+            <button class="print-btn">인쇄</button>
         </div>
+    </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>지점</th>
-                        <th>이름</th>
-                        <th>전화번호</th>
-                        <th>생년월일</th>
-                        <th>방문횟수</th>
-                        <th>가입일</th>
-                    </tr>
-                </thead>
+    <div class="table-wrapper">
+        <table class="member-table">
+            <colgroup>
+                <col style="width: 15%;"> <col style="width: 25%;"> <col style="width: 20%;"> <col style="width: 15%;"> <col style="width: 25%;"> </colgroup>
+            <thead>
+                <tr>
+                    <th>이름</th>
+                    <th>전화번호</th>
+                    <th>가입 지점</th>
+                    <th>방문횟수</th>
+                    <th>가입일</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for m in members %}
+                <tr>
+                    <td style="font-weight: 500;">{{ m.name }}</td>
+                    <td>{{ m.phone }}</td>
+                    <td>{{ m.branch }}</td>
+                    <td><span style="background: #eee; padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 12px;">{{ m.visit_count }}회</span></td>
+                    <td>{{ m.created_at }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-                <tbody>
-                    {% for m in members %}
-                    <tr>
-                        <td>{{ m.branch }}</td>
-                        <td>{{ m.name }}</td>
-                        <td>{{ m.phone }}</td>
-                        <td>{{ m.birth }}</td>
-                        <td>{{ m.visit_count }}</td>
-                        <td>{{ m.join_date.strftime('%Y-%m-%d') }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
 
-        <a href="#" onclick="window.print()" class="btn-print">
-            전체 목록 프린트
-        </a>
+    <h2 class="page-title" style="margin-top: 50px; font-size: 22px; border: none; padding: 0;">🧾 영수증 등록 기록 ({{ all_receipts|length }}건)</h2>
 
+    <div class="table-wrapper">
+        <table class="member-table">
+            <colgroup>
+                <col style="width: 20%;"> <col style="width: 15%;"> <col style="width: 15%;"> <col style="width: 20%;"> <col style="width: 20%;"> <col style="width: 10%;"> </colgroup>
+            <thead>
+                <tr>
+                    <th>등록일시</th>
+                    <th>회원명</th>
+                    <th>결제 지점</th>
+                    <th>금액</th>
+                    <th>승인번호</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in all_receipts %}
+                <tr>
+                    <td>{{ r.visit_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td style="font-weight: 500;">{{ r.member.name }}</td>
+                    <td>{{ r.branch_paid }}</td>
+                    <td style="color: #333; font-weight: 600;">{{ "{:,}".format(r.amount) }}원</td>
+                    <td style="color: #666; font-size: 13px;">{{ r.receipt_no }}</td>
+                    <td>
+                        {% if r.is_coupon_used %}
+                            <span style="color: #28a745; font-weight: 700;">쿠폰발급</span>
+                        {% else %}
+                            <span style="color: #aaa;">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6" style="padding: 30px; color: #999;">아직 등록된 영수증이 없습니다.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 </div>
+
+<script>
+document.querySelector(".print-btn").onclick = () => window.print();
+</script>
 
 </body>
 </html>
