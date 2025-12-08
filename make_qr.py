@@ -8,7 +8,7 @@ if not os.path.exists(save_folder):
 
 # 2. 기본 도메인 주소 (나중에 Render 배포 후에는 이 주소를 바꿔야 합니다!)
 # 예: base_url = "https://everest-mp.onrender.com"
-base_url = "http://127.0.0.1:5000" 
+base_url = "https://everest-ocr.onrender.com" 
 
 # 3. 지점 목록 (app.py와 동일하게 맞춤)
 branches = {
