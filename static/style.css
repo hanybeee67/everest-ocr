@@ -1,7 +1,7 @@
-/* static/style.css (최종 디자인 - 업로드 스타일 포함) */
+/* static/style.css (가입 화면 체크박스 디자인 추가됨) */
 
 /* ===============================
-   기본 세팅 (폰트 & 배경)
+   기본 세팅
 ================================ */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 
@@ -20,7 +20,7 @@ body {
 }
 
 /* ===============================
-   레이아웃 & 컨테이너
+   레이아웃
 ================================ */
 .page-wrapper {
     max-width: 600px;
@@ -33,7 +33,7 @@ body {
 }
 
 /* ===============================
-   [Mobile] 공통 디자인 요소
+   모바일 공통 요소
 ================================ */
 .brand-logo {
     text-align: center;
@@ -84,7 +84,6 @@ body {
     padding: 30px 25px;
     border-radius: 24px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-    text-align: center;
     transition: transform 0.3s ease;
 }
 
@@ -105,7 +104,7 @@ body {
 .styled-input {
     width: 100%;
     padding: 16px 20px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: #333;
     background: #f9f9f9;
@@ -113,14 +112,21 @@ body {
     border-radius: 16px;
     outline: none;
     transition: 0.3s;
-    text-align: center;
-    letter-spacing: 1px;
+    /* 텍스트 입력은 왼쪽 정렬이 더 편함 */
+    text-align: left; 
 }
 
 .styled-input:focus {
     border-color: #ff7f3f;
     background: #fff;
     box-shadow: 0 0 0 4px rgba(255, 127, 63, 0.1);
+}
+
+/* 읽기 전용 입력창 (전화번호 등) */
+.styled-input:disabled, .styled-input[readonly] {
+    background-color: #eee;
+    color: #888;
+    border-color: #ddd;
 }
 
 .btn-primary {
@@ -150,7 +156,43 @@ body {
 }
 
 /* ===============================
-   ★ [신규] 파일 업로드 박스 디자인
+   ★ [신규] 체크박스 디자인
+================================ */
+.checkbox-container {
+    margin-top: 10px;
+    background: #fdfdfd;
+    padding: 15px;
+    border-radius: 16px;
+    border: 1px solid #eee;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: #555;
+}
+
+.checkbox-row:last-child {
+    margin-bottom: 0;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    accent-color: #ff7f3f; /* 체크 시 오렌지색 */
+    cursor: pointer;
+}
+
+.checkbox-row label {
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* ===============================
+   [Mobile] 업로드 박스 디자인
 ================================ */
 .file-upload-wrapper {
     position: relative;
@@ -168,60 +210,14 @@ body {
     overflow: hidden;
     margin-bottom: 20px;
 }
-
-.file-upload-wrapper:hover, .file-upload-wrapper.active {
-    border-color: #ff7f3f;
-    background: #fff8f5;
-}
-
-.upload-icon {
-    font-size: 48px;
-    color: #ccc;
-    margin-bottom: 10px;
-    transition: 0.3s;
-}
-
-.file-upload-wrapper:hover .upload-icon {
-    color: #ff7f3f;
-    transform: scale(1.1);
-}
-
-.upload-text {
-    font-size: 15px;
-    color: #888;
-    font-weight: 500;
-}
-
-.upload-text em {
-    font-style: normal;
-    font-weight: 700;
-    color: #555;
-}
-
-/* 실제 파일 input은 숨김 */
-.file-input-hidden {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    cursor: pointer;
-}
-
-/* 파일 선택 후 미리보기 이미지 */
-.preview-img {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 18px;
-    display: none; /* JS로 활성화 */
-}
-
+.file-upload-wrapper:hover { border-color: #ff7f3f; background: #fff8f5; }
+.upload-icon { font-size: 48px; color: #ccc; margin-bottom: 10px; }
+.upload-text { font-size: 15px; color: #888; font-weight: 500; }
+.file-input-hidden { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.preview-img { position: absolute; width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: none; }
 
 /* ===============================
-   관리자 페이지 스타일 (유지)
+   관리자 페이지 스타일
 ================================ */
 .admin-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
 .page-title { font-size: 28px; font-weight: 700; color: #111; margin-bottom: 20px; border-left: 5px solid #ff7f3f; padding-left: 15px; }
