@@ -1,6 +1,6 @@
-Flask==3.0.2
-Flask-SQLAlchemy==3.0.5
-SQLAlchemy==1.4.47
-gunicorn==21.2.0
-google-cloud-vision==3.6.0
-Pillow==10.1.0
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+gunicorn
+google-cloud-vision
+Pillow
