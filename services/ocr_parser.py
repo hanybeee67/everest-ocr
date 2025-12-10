@@ -43,7 +43,7 @@ def detect_text_from_receipt(image_path):
             os.remove(image_path)
 
         if texts:
-            # 디버깅을 위해 전체 텍스트 로그 출력
+            # 디버깅용: 전체 텍스트 로그
             full_text = texts[0].description
             print(f"\n[OCR 원본 데이터]\n{full_text}\n[OCR 끝]\n")
             return full_text
@@ -57,7 +57,6 @@ def detect_text_from_receipt(image_path):
 
 def parse_receipt_text(ocr_text):
     data = { "receipt_no": None, "branch_paid": "미확인 지점", "amount": 0 }
-    
     if not ocr_text: return data
 
     # 1. 지점명 찾기
@@ -69,60 +68,90 @@ def parse_receipt_text(ocr_text):
                 break
         if data["branch_paid"] != "미확인 지점": break
             
-    # 2. 금액 찾기 (관리자님 특별 지시: 합계 줄의 오른쪽 끝 숫자!!)
+    # 2. 금액 찾기 (관리자님 지시: 오른쪽 옆에 있는 숫자 필사적으로 찾기)
     
-    # 찾을 키워드 (공백 없이 매칭할 것임)
-    amount_keywords = ["합계", "결제금액", "청구금액", "받을금액", "승인금액", "매출금액", "total", "tot", "amount", "금액"]
+    # 띄어쓰기 무시하고 찾을 키워드들
+    keywords_list = ["합계", "결제금액", "청구금액", "받을금액", "승인금액", "매출금액", "total", "tot", "amount"]
     
     lines = ocr_text.split('\n')
     found_amount = False
 
-    print("\n🔍 [금액 탐색 시작]")
+    # [보조 함수] 한 줄의 텍스트에서 '맨 오른쪽'에 있는 유효한 금액 추출
+    def get_amount_from_line(text):
+        # 숫자만 추출 (쉼표, 마침표 포함)
+        numbers = re.findall(r'([0-9,.]+)', text)
+        if numbers:
+            # 뒤에서부터 확인 (오른쪽 끝이 진짜 금액일 확률 높음)
+            for num_str in reversed(numbers):
+                # 쉼표(,) 제거. 마침표(.)도 제거 (가끔 52.500으로 인식됨)
+                clean_num = num_str.replace(',', '').replace('.', '')
+                if clean_num.isdigit():
+                    val = int(clean_num)
+                    # 100원 ~ 5천만원 사이 (수량 1, 페이지 번호 등 제외)
+                    if 100 <= val < 50000000:
+                        return val
+        return None
 
-    for line in lines:
-        # 정확한 매칭을 위해 특수문자와 공백을 다 뺀 '순수 글자'만 봅니다.
-        # 예: "합 계 : 50,000" -> "합계50000" (이렇게 만들어서 키워드를 찾음)
-        pure_line_char = re.sub(r'[^가-힣a-zA-Z]', '', line) # 한글과 영어만 남김
-        
-        # 키워드가 이 줄에 숨어있는지 확인
-        if any(k in pure_line_char for k in amount_keywords):
-            print(f"👉 후보 줄 발견: {line}")
-            
-            # 이 줄에 있는 숫자들을 다 긁어모읍니다.
-            numbers = re.findall(r'([0-9,]+)', line)
-            
-            # 숫자가 있다면, 맨 뒤(오른쪽)부터 거꾸로 검사합니다.
-            if numbers:
-                for num_str in reversed(numbers):
-                    clean_num = num_str.replace(',', '')
-                    if clean_num.isdigit():
-                        val = int(clean_num)
-                        
-                        # 100원 이상인 것만 '금액'으로 인정 (페이지 번호나 수량 1 무시)
-                        if 100 <= val < 20000000:
-                            data["amount"] = val
-                            found_amount = True
-                            print(f"✅ [성공] 오른쪽 끝에서 유효한 금액 찾음: {val}")
-                            break # 찾았으면 숫자 루프 종료
-                
-                if found_amount:
-                    break # 찾았으면 줄 루프 종료
+    print("\n🔍 [금액 탐색 시작 - 오른쪽 끝 집중]")
 
-    # 3. 키워드로 못 찾았을 때 비상 대책
+    for i in range(len(lines)):
+        line = lines[i]
+        # 공백/특수문자 제거 후 키워드 확인 ("합 계  금 액" -> "합계금액")
+        pure_line = re.sub(r'[^가-힣a-zA-Z]', '', line) 
+
+        if any(k in pure_line for k in keywords_list):
+            print(f"👉 키워드 발견(L{i}): {line}")
+            
+            # [1단계] 바로 그 줄의 오른쪽 끝 확인
+            amount = get_amount_from_line(line)
+            if amount:
+                data["amount"] = amount
+                found_amount = True
+                print(f"✅ (같은 줄) 오른쪽 끝 금액 발견: {amount}")
+                break
+            
+            # [2단계] 그 줄에 없으면? 공백 때문에 다음 줄로 밀렸을 수 있음. 바로 아래 2줄까지 뒤짐.
+            # "합계" 찾았는데 옆이 비어있으면 무조건 아래에 숫자가 있다고 가정
+            print("   ↳ 같은 줄에 없음. 아래 줄 수색 시작.")
+            for j in range(1, 3): # 바로 아래(1), 그 다음 아래(2) 까지 확인
+                if i + j < len(lines):
+                    next_line = lines[i+j]
+                    amount_next = get_amount_from_line(next_line)
+                    if amount_next:
+                        data["amount"] = amount_next
+                        found_amount = True
+                        print(f"✅ (아래 {j}번째 줄) 금액 발견: {amount_next}")
+                        break
+            if found_amount: break
+
+    # 3. 키워드 탐색 실패 시 비상 대책
     if not found_amount:
-        print("⚠️ 합계 줄을 못 찾음. 전체 중 가장 큰 숫자 탐색.")
-        candidates = re.findall(r'([0-9,]{4,})', ocr_text)
-        max_val = 0
-        for cand in candidates:
-            val_str = cand.replace(',', '').replace('.', '')
-            if val_str.isdigit():
-                val = int(val_str)
-                if 100 <= val < 5000000: 
-                    if val > max_val:
-                        max_val = val
-        if max_val > 0:
-            data["amount"] = max_val
-            print(f"💰 비상 대책으로 찾은 금액: {data['amount']}")
+        print("⚠️ 키워드로 못 찾음. '금액' 단어 포함 줄 재검색.")
+        # '금액'이라는 단어가 들어간 줄을 한번 더 봅니다 (단가, 수량 있는 헤더 제외)
+        for line in lines:
+            if ("금액" in line or "amount" in line.lower()) and "수량" not in line and "단가" not in line:
+                amount = get_amount_from_line(line)
+                if amount:
+                    data["amount"] = amount
+                    found_amount = True
+                    print(f"✅ '금액' 줄에서 발견: {amount}")
+                    break
+        
+        # 그래도 없으면 전체 최대값
+        if not found_amount:
+            print("🚨 전체 숫자 중 최대값 추정.")
+            candidates = re.findall(r'([0-9,]{4,})', ocr_text)
+            max_val = 0
+            for cand in candidates:
+                val_str = cand.replace(',', '').replace('.', '')
+                if val_str.isdigit():
+                    val = int(val_str)
+                    if 100 <= val < 10000000: 
+                        if val > max_val:
+                            max_val = val
+            if max_val > 0:
+                data["amount"] = max_val
+                print(f"💰 최대 숫자 추정: {data['amount']}")
 
     # 4. 승인번호 찾기
     receipt_no_match = re.search(r'(승인번호|일련번호|no|number)[:.\s]*([0-9-]{8,20})', clean_text_all)
