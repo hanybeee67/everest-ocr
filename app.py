@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import datetime
@@ -14,6 +14,9 @@ from services.coupon_manager import issue_coupon_if_qualified
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, instance_path=os.path.join(APP_ROOT, 'instance'))
 os.makedirs(app.instance_path, exist_ok=True)
+
+# ★ [보안] 세션 암호화 키 설정 (로그인 기능 필수)
+app.secret_key = "everest_secret_key_8848" 
 
 # DB 설정
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
@@ -107,7 +110,7 @@ def join():
     new_member = Members(
         name=name, phone=phone, branch=branch, birth=birth,
         agree_marketing=agree_marketing, agree_privacy=agree_privacy,
-        visit_count=0, # 가입 시점엔 0, 영수증 등록 시 1로 증가
+        visit_count=0, 
         last_visit=today,
         created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -136,7 +139,7 @@ def receipt_process():
         image_path = os.path.join(app.instance_path, image_filename)
         file.save(image_path)
         
-        # ★ 진짜 OCR 실행
+        # OCR 실행
         ocr_result_text = detect_text_from_receipt(image_path)
         
     except Exception as e:
@@ -146,7 +149,7 @@ def receipt_process():
         return render_template("result.html", title="시스템 오류", message=f"처리 중 오류 발생: {e}", success=False)
 
     if not ocr_result_text:
-        return render_template("result.html", title="인식 실패", message="영수증 글자를 읽을 수 없습니다. 선명한 사진으로 다시 시도해 주세요.", success=False)
+        return render_template("result.html", title="인식 실패", message="영수증 글자를 읽을 수 없습니다.", success=False)
 
     # 파싱
     parsed_data = parse_receipt_text(ocr_result_text)
@@ -154,9 +157,8 @@ def receipt_process():
     branch_paid = parsed_data["branch_paid"]
     amount = parsed_data["amount"]
 
-    # 영수증 중복 체크
+    # 중복 체크
     if Receipts.query.filter_by(receipt_no=receipt_no).first():
-         # 중복이지만 실패 화면 대신, 안내 화면으로 보냄
         return render_template("result.html", title="이미 등록된 영수증", 
                                message="이미 등록하신 영수증입니다.", success=False)
 
@@ -166,7 +168,7 @@ def receipt_process():
     )
     db.session.add(new_receipt)
     
-    # 방문 횟수 및 날짜 업데이트
+    # 방문 정보 업데이트
     today = datetime.now().strftime("%Y-%m-%d")
     if member.last_visit != today:
         member.visit_count += 1
@@ -174,13 +176,12 @@ def receipt_process():
     
     db.session.commit()
     
-    # 쿠폰 발급 로직
+    # 쿠폰 발급
     coupon_issued = issue_coupon_if_qualified(db, Receipts, Coupons, member.id)
     
-    # ★ 총 누적 금액 계산 (이번 영수증 포함)
+    # 총 누적 금액
     total_spent = db.session.query(func.sum(Receipts.amount)).filter_by(member_id=member.id).scalar() or 0
 
-    # 결과 화면으로 데이터 전달 (이름, 방문횟수, 이번금액, 총금액, 쿠폰여부)
     return render_template("result.html", 
                            success=True,
                            title="적립 완료",
@@ -190,17 +191,45 @@ def receipt_process():
                            total_amount=total_spent,
                            coupon_issued=coupon_issued)
 
+# --- [보안 추가] 관리자 로그인 기능 ---
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    # 1. 로그인 시도 (POST)
+    if request.method == "POST":
+        password = request.form.get("password")
+        # ★ 비밀번호 설정: everest1234
+        if password == "everest1234":
+            session['admin_logged_in'] = True
+            return redirect("/admin/members")
+        else:
+            return render_template("login.html", error="암호가 틀렸습니다.")
+    
+    # 2. 로그인 화면 보여주기 (GET)
+    return render_template("login.html")
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect("/admin/login")
+
 @app.route("/admin/members")
 def admin_members():
+    # ★ [보안 핵심] 로그인이 안 되어 있으면 로그인 페이지로 쫓아냄
+    if not session.get('admin_logged_in'):
+        return redirect("/admin/login")
+
     sort = request.args.get("sort", "date")
     if sort == "name": members = Members.query.order_by(Members.name.asc()).all()
     elif sort == "branch": members = Members.query.order_by(Members.branch.asc()).all()
     elif sort == "visit": members = Members.query.order_by(Members.visit_count.desc()).all()
     else: members = Members.query.order_by(Members.id.desc()).all()
+    
     all_receipts = Receipts.query.order_by(Receipts.visit_date.desc()).all()
     
     total_members = Members.query.count()
     total_visits = db.session.query(db.func.sum(Members.visit_count)).scalar() or 0
+    
     return render_template("members.html", members=members, sort=sort, total_members=total_members, total_visits=total_visits, all_receipts=all_receipts)
 
 if __name__ == "__main__":
