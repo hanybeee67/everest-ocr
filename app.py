@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import datetime
@@ -15,7 +15,7 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, instance_path=os.path.join(APP_ROOT, 'instance'))
 os.makedirs(app.instance_path, exist_ok=True)
 
-# ★ [보안] 세션 암호화 키 설정 (로그인 기능 필수)
+# ★ [보안] 세션 암호화 키
 app.secret_key = "everest_secret_key_8848" 
 
 # DB 설정
@@ -93,7 +93,8 @@ def check():
     member = Members.query.filter_by(phone=phone).first()
 
     if member:
-        return render_template("receipt_upload.html", member_id=member.id, name=member.name, branch_name=branch_name)
+        # 재방문 고객: DB에 있는 방문 횟수 그대로 전달
+        return render_template("receipt_upload.html", member_id=member.id, name=member.name, branch_name=branch_name, visit_count=member.visit_count)
     else:
         return render_template("join.html", phone=phone, branch=branch_name, branch_code=branch_code)
 
@@ -117,7 +118,8 @@ def join():
     db.session.add(new_member)
     db.session.commit()
 
-    return render_template("receipt_upload.html", member_id=new_member.id, name=new_member.name, branch_name=branch)
+    # ★ [수정 1] 신규 가입 직후 '1번째 방문'이라고 뜨게 하기 위해 visit_count=1을 강제로 전달
+    return render_template("receipt_upload.html", member_id=new_member.id, name=new_member.name, branch_name=branch, visit_count=1)
 
 @app.route("/receipt/process", methods=["POST"])
 def receipt_process():
@@ -191,21 +193,17 @@ def receipt_process():
                            total_amount=total_spent,
                            coupon_issued=coupon_issued)
 
-# --- [보안 추가] 관리자 로그인 기능 ---
+# --- [보안 및 관리자 기능] ---
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
-    # 1. 로그인 시도 (POST)
     if request.method == "POST":
         password = request.form.get("password")
-        # ★ 비밀번호 설정: everest1234
         if password == "everest1234":
             session['admin_logged_in'] = True
             return redirect("/admin/members")
         else:
             return render_template("login.html", error="암호가 틀렸습니다.")
-    
-    # 2. 로그인 화면 보여주기 (GET)
     return render_template("login.html")
 
 @app.route("/admin/logout")
@@ -215,7 +213,6 @@ def admin_logout():
 
 @app.route("/admin/members")
 def admin_members():
-    # ★ [보안 핵심] 로그인이 안 되어 있으면 로그인 페이지로 쫓아냄
     if not session.get('admin_logged_in'):
         return redirect("/admin/login")
 
@@ -231,6 +228,22 @@ def admin_members():
     total_visits = db.session.query(db.func.sum(Members.visit_count)).scalar() or 0
     
     return render_template("members.html", members=members, sort=sort, total_members=total_members, total_visits=total_visits, all_receipts=all_receipts)
+
+# ★ [수정 2] 관리자용 회원 삭제 기능 추가
+@app.route("/admin/delete_member/<int:id>")
+def delete_member(id):
+    if not session.get('admin_logged_in'):
+        return redirect("/admin/login")
+    
+    member = Members.query.get(id)
+    if member:
+        # 회원을 지우기 전에 관련된 영수증과 쿠폰을 먼저 지워야 에러가 안 납니다.
+        Receipts.query.filter_by(member_id=id).delete()
+        Coupons.query.filter_by(member_id=id).delete()
+        db.session.delete(member)
+        db.session.commit()
+    
+    return redirect("/admin/members")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
