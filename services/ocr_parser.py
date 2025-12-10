@@ -54,9 +54,10 @@ def detect_text_from_receipt(image_path):
 
 def parse_receipt_text(ocr_text):
     data = { "receipt_no": None, "branch_paid": "미확인 지점", "amount": 0 }
+    
     if not ocr_text: return data
 
-    # 1. 지점명 찾기 (전체 텍스트에서 검색 - 공백 무시하고 찾기)
+    # 1. 지점명 찾기 (공백 무시하고 전체에서 탐색)
     clean_text_all = ocr_text.replace(' ', '').lower()
     for official_name, keywords in BRANCH_NAMES.items():
         for keyword in keywords:
@@ -65,70 +66,57 @@ def parse_receipt_text(ocr_text):
                 break
         if data["branch_paid"] != "미확인 지점": break
             
-    # 2. 금액 찾기 (★수정됨: 공백 유지 + 오른쪽 끝 숫자 우선)
-    # "금액"이라는 단어는 "주문금액", "할인금액" 등 여기저기 너무 많이 쓰여서 오해를 낳으므로 우선순위를 낮춥니다.
-    # 진짜 합계일 확률이 높은 키워드들
-    primary_keywords = ["합계", "결제금액", "청구금액", "받을금액", "승인금액", "매출금액", "total", "tot"]
-    secondary_keywords = ["금액", "amount"] # 최후의 수단
+    # 2. 금액 찾기 (★수정 핵심: 줄의 맨 오른쪽 끝 숫자 선택)
+    # 영수증 구조: [메뉴명] [단가] [수량] [금액] -> 맨 뒤에 있는게 정답
     
-    lines = ocr_text.split('\n') # 줄 단위로 쪼개기
+    amount_keywords = [
+        "합계", "결제금액", "청구금액", "합계금액", "승인금액", 
+        "매출금액", "total", "tot", "amount", "금액", "계"
+    ]
+    
+    lines = ocr_text.split('\n') # 한 줄씩 쪼개기
     found_amount = False
 
-    def find_amount_in_lines(target_keywords):
-        for line in lines:
-            # 공백을 없애지 않고 그대로 둡니다! (15000 1 붙는 것 방지)
-            clean_line = line.lower() 
+    for line in lines:
+        # 이 줄에 '합계'나 '금액' 같은 단어가 있는지 확인
+        if any(keyword in line.replace(' ', '').lower() for keyword in amount_keywords):
             
-            for keyword in target_keywords:
-                if keyword in clean_line:
-                    # 해당 줄에 있는 모든 숫자들을 찾습니다 (쉼표 포함)
-                    # 예: "합계금액 : 15,000" -> ['15,000']
-                    # 예: "Butter Chicken 15,000 1 15,000" -> ['15,000', '1', '15,000']
-                    numbers = re.findall(r'([0-9,]+)', line)
+            # 이 줄에 있는 "모든 숫자 덩어리"를 찾습니다. (콤마 포함)
+            # 예: "Butter Chicken 15,000 1 15,000" -> ['15,000', '1', '15,000']
+            numbers = re.findall(r'([0-9,]+)', line)
+            
+            if numbers:
+                # ★ 핵심: 리스트의 맨 마지막([-1]) 숫자가 바로 '오른쪽 끝 금액'입니다.
+                last_number_str = numbers[-1]
+                
+                # 콤마 제거하고 숫자로 변환
+                clean_num = last_number_str.replace(',', '')
+                
+                if clean_num.isdigit():
+                    val = int(clean_num)
                     
-                    # 뒤에서부터 검사 (보통 합계는 맨 오른쪽에 있음)
-                    for num_str in reversed(numbers):
-                        raw_num = num_str.replace(',', '')
-                        if raw_num.isdigit():
-                            val = int(raw_num)
-                            # 100원 이상 ~ 1000만원 이하 (수량 1 같은거 거르기 위함)
-                            if 100 <= val < 10000000:
-                                return val
-        return None
-
-    # 1차 시도: 확실한 키워드(합계, total 등)로 찾기
-    amount_found = find_amount_in_lines(primary_keywords)
-    if amount_found:
-        data["amount"] = amount_found
-        found_amount = True
-        print(f"💰 1차 키워드 탐색 성공: {data['amount']}")
-
-    # 2차 시도: 1차 실패시 '금액' 같은 약한 키워드로 찾기
-    if not found_amount:
-        amount_found = find_amount_in_lines(secondary_keywords)
-        if amount_found:
-            data["amount"] = amount_found
-            found_amount = True
-            print(f"💰 2차 키워드 탐색 성공: {data['amount']}")
+                    # 100원 이상이고 1000만원 이하인 경우만 인정 (이상한 숫자 방지)
+                    if 100 <= val < 10000000:
+                        data["amount"] = val
+                        found_amount = True
+                        print(f"💰 줄의 맨 오른쪽 끝 금액 발견: {val}")
+                        break
     
-    # 3차 시도: 키워드 다 실패하면 전체에서 가장 큰 숫자 (Fallback)
+    # 위에서 못 찾았다면, 최후의 수단으로 전체 텍스트에서 가장 큰 숫자 찾기
     if not found_amount:
-        print("⚠️ 키워드 탐색 실패. 전체 숫자 중 추정.")
-        # 전화번호 등은 공백 제거된 전체 텍스트에서 패턴으로 거르는게 나음
-        # 하지만 여기선 간단히 4자리 이상 숫자 중 큰 것으로
-        candidates = re.findall(r'([0-9,]{4,})', ocr_text) 
+        print("⚠️ 합계 줄을 못 찾음. 전체 중 가장 큰 숫자 탐색.")
+        candidates = re.findall(r'([0-9,]{4,})', ocr_text)
         max_val = 0
         for cand in candidates:
             val_str = cand.replace(',', '').replace('.', '')
             if val_str.isdigit():
                 val = int(val_str)
-                # 전화번호(010...)나 사업자번호 방지 위해 범위 제한
+                # 전화번호 등 제외 필터
                 if 100 <= val < 5000000: 
                     if val > max_val:
                         max_val = val
         if max_val > 0:
             data["amount"] = max_val
-            print(f"💰 최대 숫자 추정: {data['amount']}")
 
     # 3. 승인번호 찾기
     receipt_no_match = re.search(r'(승인번호|일련번호|no|number)[:.\s]*([0-9-]{8,20})', clean_text_all)
