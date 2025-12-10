@@ -43,7 +43,7 @@ class Members(db.Model):
     branch = db.Column(db.String(50))
     agree_marketing = db.Column(db.String(5))
     agree_privacy = db.Column(db.String(5))
-    visit_count = db.Column(db.Integer, default=1)      
+    visit_count = db.Column(db.Integer, default=0)      
     last_visit = db.Column(db.String(20))               
     created_at = db.Column(db.String(30))
     receipts = db.relationship('Receipts', backref='member', lazy=True)
@@ -93,7 +93,6 @@ def check():
     member = Members.query.filter_by(phone=phone).first()
 
     if member:
-        # 재방문 고객: DB에 있는 방문 횟수 그대로 전달
         return render_template("receipt_upload.html", member_id=member.id, name=member.name, branch_name=branch_name, visit_count=member.visit_count)
     else:
         return render_template("join.html", phone=phone, branch=branch_name, branch_code=branch_code)
@@ -111,15 +110,16 @@ def join():
     new_member = Members(
         name=name, phone=phone, branch=branch, birth=birth,
         agree_marketing=agree_marketing, agree_privacy=agree_privacy,
-        visit_count=0, 
+        visit_count=0, # 가입 시점엔 0
         last_visit=today,
         created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
     db.session.add(new_member)
     db.session.commit()
 
-    # ★ [수정 1] 신규 가입 직후 '1번째 방문'이라고 뜨게 하기 위해 visit_count=1을 강제로 전달
-    return render_template("receipt_upload.html", member_id=new_member.id, name=new_member.name, branch_name=branch, visit_count=1)
+    # 가입 직후에는 아직 영수증 처리가 안 되었으므로 visit_count는 0이지만,
+    # 화면에는 "환영합니다" 느낌을 주기 위해 그대로 둡니다.
+    return render_template("receipt_upload.html", member_id=new_member.id, name=new_member.name, branch_name=branch, visit_count=0)
 
 @app.route("/receipt/process", methods=["POST"])
 def receipt_process():
@@ -170,9 +170,11 @@ def receipt_process():
     )
     db.session.add(new_receipt)
     
-    # 방문 정보 업데이트
+    # ★ [핵심 수정] 방문 횟수 증가 로직
     today = datetime.now().strftime("%Y-%m-%d")
-    if member.last_visit != today:
+    
+    # 조건: (방문 횟수가 0인 신규 회원이거나) OR (마지막 방문일이 오늘이 아니면) -> 카운트 증가
+    if member.visit_count == 0 or member.last_visit != today:
         member.visit_count += 1
         member.last_visit = today
     
@@ -229,7 +231,6 @@ def admin_members():
     
     return render_template("members.html", members=members, sort=sort, total_members=total_members, total_visits=total_visits, all_receipts=all_receipts)
 
-# ★ [수정 2] 관리자용 회원 삭제 기능 추가
 @app.route("/admin/delete_member/<int:id>")
 def delete_member(id):
     if not session.get('admin_logged_in'):
@@ -237,7 +238,6 @@ def delete_member(id):
     
     member = Members.query.get(id)
     if member:
-        # 회원을 지우기 전에 관련된 영수증과 쿠폰을 먼저 지워야 에러가 안 납니다.
         Receipts.query.filter_by(member_id=id).delete()
         Coupons.query.filter_by(member_id=id).delete()
         db.session.delete(member)
