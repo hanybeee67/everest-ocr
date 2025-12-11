@@ -7,6 +7,7 @@ import uuid
 import json
 
 # OCR 및 쿠폰 서비스 모듈
+# (주의: services/ocr_parser.py 파일은 아까 수정한 최신 버전을 그대로 둡니다)
 from services.ocr_parser import detect_text_from_receipt, parse_receipt_text
 from services.coupon_manager import issue_coupon_if_qualified
 
@@ -15,7 +16,7 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, instance_path=os.path.join(APP_ROOT, 'instance'))
 os.makedirs(app.instance_path, exist_ok=True)
 
-# ★ [보안] 세션 암호화 키
+# 보안 키 (세션용)
 app.secret_key = "everest_secret_key_8848" 
 
 # DB 설정
@@ -89,7 +90,6 @@ def check():
     phone = request.form.get("phone")
     branch_code = request.form.get("branch_code")
     branch_name = BRANCH_MAP.get(branch_code, "에베레스트")
-
     member = Members.query.filter_by(phone=phone).first()
 
     if member:
@@ -110,15 +110,12 @@ def join():
     new_member = Members(
         name=name, phone=phone, branch=branch, birth=birth,
         agree_marketing=agree_marketing, agree_privacy=agree_privacy,
-        visit_count=0, # 가입 시점엔 0
+        visit_count=0, 
         last_visit=today,
         created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
     db.session.add(new_member)
     db.session.commit()
-
-    # 가입 직후에는 아직 영수증 처리가 안 되었으므로 visit_count는 0이지만,
-    # 화면에는 "환영합니다" 느낌을 주기 위해 그대로 둡니다.
     return render_template("receipt_upload.html", member_id=new_member.id, name=new_member.name, branch_name=branch, visit_count=0)
 
 @app.route("/receipt/process", methods=["POST"])
@@ -140,8 +137,6 @@ def receipt_process():
         image_filename = str(uuid.uuid4()) + ".jpg"
         image_path = os.path.join(app.instance_path, image_filename)
         file.save(image_path)
-        
-        # OCR 실행
         ocr_result_text = detect_text_from_receipt(image_path)
         
     except Exception as e:
@@ -153,37 +148,36 @@ def receipt_process():
     if not ocr_result_text:
         return render_template("result.html", title="인식 실패", message="영수증 글자를 읽을 수 없습니다.", success=False)
 
-    # 파싱
     parsed_data = parse_receipt_text(ocr_result_text)
     receipt_no = parsed_data["receipt_no"]
     branch_paid = parsed_data["branch_paid"]
     amount = parsed_data["amount"]
 
-    # 중복 체크
     if Receipts.query.filter_by(receipt_no=receipt_no).first():
-        return render_template("result.html", title="이미 등록된 영수증", 
-                               message="이미 등록하신 영수증입니다.", success=False)
+        return render_template("result.html", title="이미 등록된 영수증", message="이미 등록하신 영수증입니다.", success=False)
 
-    # 영수증 저장
     new_receipt = Receipts(
         member_id=member.id, receipt_no=receipt_no, branch_paid=branch_paid, amount=amount, visit_date=datetime.now()
     )
     db.session.add(new_receipt)
     
-    # ★ [핵심 수정] 방문 횟수 증가 로직
+    # 방문 횟수 증가 로직 (강화됨)
     today = datetime.now().strftime("%Y-%m-%d")
+    current_count = member.visit_count if member.visit_count is not None else 0
     
-    # 조건: (방문 횟수가 0인 신규 회원이거나) OR (마지막 방문일이 오늘이 아니면) -> 카운트 증가
-    if member.visit_count == 0 or member.last_visit != today:
-        member.visit_count += 1
+    if current_count == 0 or member.last_visit != today:
+        member.visit_count = current_count + 1
         member.last_visit = today
     
     db.session.commit()
     
-    # 쿠폰 발급
-    coupon_issued = issue_coupon_if_qualified(db, Receipts, Coupons, member.id)
-    
-    # 총 누적 금액
+    # ★ 쿠폰 발급 (리스트 반환 지원)
+    issued_coupons_list = issue_coupon_if_qualified(db, Receipts, Coupons, member.id)
+    if issued_coupons_list:
+        coupon_message = ", ".join(issued_coupons_list)
+    else:
+        coupon_message = None
+
     total_spent = db.session.query(func.sum(Receipts.amount)).filter_by(member_id=member.id).scalar() or 0
 
     return render_template("result.html", 
@@ -193,9 +187,9 @@ def receipt_process():
                            visit_count=member.visit_count,
                            current_amount=amount,
                            total_amount=total_spent,
-                           coupon_issued=coupon_issued)
+                           coupon_issued=coupon_message)
 
-# --- [보안 및 관리자 기능] ---
+# --- 관리자 및 쿠폰 시스템 ---
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
@@ -225,7 +219,6 @@ def admin_members():
     else: members = Members.query.order_by(Members.id.desc()).all()
     
     all_receipts = Receipts.query.order_by(Receipts.visit_date.desc()).all()
-    
     total_members = Members.query.count()
     total_visits = db.session.query(db.func.sum(Members.visit_count)).scalar() or 0
     
@@ -235,15 +228,49 @@ def admin_members():
 def delete_member(id):
     if not session.get('admin_logged_in'):
         return redirect("/admin/login")
-    
     member = Members.query.get(id)
     if member:
         Receipts.query.filter_by(member_id=id).delete()
         Coupons.query.filter_by(member_id=id).delete()
         db.session.delete(member)
         db.session.commit()
-    
     return redirect("/admin/members")
+
+# [신규] 쿠폰 관리 페이지
+@app.route("/admin/coupons")
+def admin_coupons():
+    if not session.get('admin_logged_in'):
+        return redirect("/admin/login")
+    
+    keyword = request.args.get("keyword", "").strip()
+    member = None
+    coupons = []
+    
+    if keyword:
+        member = Members.query.filter(
+            (Members.phone.like(f"%{keyword}%")) | (Members.name.like(f"%{keyword}%"))
+        ).first()
+        if member:
+            coupons = Coupons.query.filter_by(member_id=member.id).order_by(Coupons.is_used.asc(), Coupons.expiry_date.asc()).all()
+            
+    return render_template("admin_coupons.html", member=member, coupons=coupons, keyword=keyword)
+
+# [신규] 쿠폰 사용 처리
+@app.route("/admin/use_coupon/<int:coupon_id>")
+def use_coupon(coupon_id):
+    if not session.get('admin_logged_in'):
+        return redirect("/admin/login")
+    
+    coupon = Coupons.query.get(coupon_id)
+    keyword = request.args.get("keyword", "")
+    
+    if coupon and not coupon.is_used:
+        coupon.is_used = True
+        coupon.used_date = datetime.now()
+        coupon.used_at_branch = "관리자처리" 
+        db.session.commit()
+    
+    return redirect(f"/admin/coupons?keyword={keyword}")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
