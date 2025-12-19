@@ -20,7 +20,7 @@ branches = {
     "yangjae": "양재점",
     "suwon": "수원영통점",
     "dongtan": "동탄점",
-    "lumbini": "룸비니"
+    "lumbini": "룸비니(동묘)"
 }
 
 print(f"--- 실전용 QR코드 생성을 시작합니다 (주소: {base_url}) ---")
