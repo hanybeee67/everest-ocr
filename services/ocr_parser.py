@@ -56,7 +56,7 @@ def detect_text_from_receipt(image_path):
         raise e 
 
 def parse_receipt_text(ocr_text):
-    data = { "receipt_no": None, "branch_paid": "미확인 지점", "amount": 0 }
+    data = { "receipt_no": None, "branch_paid": "미확인 지점", "amount": 0, "date": None }
     if not ocr_text: return data
 
     # 1. 지점명 찾기
@@ -150,11 +150,22 @@ def parse_receipt_text(ocr_text):
             data["amount"] = max_val
             print(f"💰 비상 대책으로 찾은 금액: {data['amount']}")
 
-    # 4. 승인번호 찾기
-    receipt_no_match = re.search(r'(승인번호|일련번호|no|number)[:.\s]*([0-9-]{8,20})', clean_text_all)
+    # 4. 날짜 찾기 (추가)
+    date_match = re.search(r'(\d{4}[-/.]\d{2}[-/.]\d{2})|(\d{2}[-/.]\d{2}[-/.]\d{2})', ocr_text)
+    if date_match:
+        data["date"] = date_match.group(0).replace('-', '').replace('/', '').replace('.', '')
+    else:
+        data["date"] = datetime.now().strftime("%Y%m%d")
+
+    # 5. 승인번호 찾기 (강화)
+    # 승인번호, 일련번호, 거래번호, APPROVAL, Auth No 등 다양한 패턴 대응
+    receipt_no_match = re.search(r'(승인번호|일련번호|거래번호|결제번호|approval|auth|no|number)[:.\s]*([0-9-]{8,20})', clean_text_all)
     if receipt_no_match:
         data["receipt_no"] = receipt_no_match.group(2).replace('-', '')
     else:
-        data["receipt_no"] = "AUTO_" + datetime.now().strftime("%Y%m%d%H%M%S")
+        # [핵심] 승인번호가 없을 경우: 지점+금액+날짜 조합으로 결정적 ID 생성 (중복 방지용)
+        # 같은 영수증을 다시 찍으면 항상 같은 AUTO_ID가 나옵니다.
+        safe_branch = data["branch_paid"].replace(' ', '')
+        data["receipt_no"] = f"AUTO_{safe_branch}_{data['amount']}_{data['date']}"
 
     return data
