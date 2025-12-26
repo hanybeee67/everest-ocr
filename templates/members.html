@@ -199,6 +199,8 @@
                 <td>{{ member.last_visit }}</td>
                 <td>{{ member.created_at }}</td>
                 <td>
+                    <a href="/admin/member/{{ member.id }}/edit"
+                        style="color: blue; text-decoration: none; margin-right: 5px;">[수정]</a>
                     <a href="/admin/delete_member/{{ member.id }}" class="btn-delete"
                         onclick="return confirmDelete()">삭제</a>
                 </td>

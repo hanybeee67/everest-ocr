@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from datetime import datetime
+import datetime as dt_module # datetime 객체 충돌 방지용
 import os
 import uuid
 import json
@@ -17,11 +18,34 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, instance_path=os.path.join(APP_ROOT, 'instance'))
 os.makedirs(app.instance_path, exist_ok=True)
 
+from cryptography.fernet import Fernet
+
 # 보안 키 (세션용)
 app.secret_key = "everest_secret_key_8848" 
 
 # 관리자 비밀번호 해시 (SHA-256) -> "everest1234"
 ADMIN_PASSWORD_HASH = "1b77f72b1a137d87dc8e667a47c2c4ffb6fa8156aed1de7bc9d62e0cc5a8fefd"
+
+# 암호화 키 로드 (없으면 생성 - 임시 방편, 배포 시 주의)
+KEY_FILE = "encryption_key.txt"
+if not os.path.exists(KEY_FILE):
+    with open(KEY_FILE, "wb") as f:
+        f.write(Fernet.generate_key())
+
+with open(KEY_FILE, "r", encoding="utf-8") as f:
+    FERNET_KEY = f.read().strip()
+cipher_suite = Fernet(FERNET_KEY)
+
+def encrypt_data(data):
+    if not data: return data
+    return cipher_suite.encrypt(data.encode()).decode()
+
+def decrypt_data(data):
+    if not data: return data
+    try:
+        return cipher_suite.decrypt(data.encode()).decode()
+    except:
+        return data  # 마이그레이션 전 평문일 경우 그대로 반환
 
 # DB 설정
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
@@ -42,9 +66,36 @@ BRANCH_MAP = {
 # 모델 정의
 class Members(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50))
-    phone = db.Column(db.String(20), unique=True)
-    birth = db.Column(db.String(20))
+    _name = db.Column("name", db.String(255))  # DB 컬럼명 'name' 매핑
+    _phone = db.Column("phone", db.String(255), unique=True) # DB 컬럼명 'phone' 매핑
+    _birth = db.Column("birth", db.String(255)) # DB 컬럼명 'birth' 매핑
+    
+    @property
+    def name(self):
+        return decrypt_data(self._name)
+    
+    @name.setter
+    def name(self, value):
+        self._name = encrypt_data(value)
+
+    @property
+    def phone(self):
+        return decrypt_data(self._phone)
+    
+    @phone.setter
+    def phone(self, value):
+        self._phone = encrypt_data(value)
+
+    @property
+    def birth(self):
+        return decrypt_data(self._birth)
+    
+    @birth.setter
+    def birth(self, value):
+        self._birth = encrypt_data(value)
+        
+    # 기존 코드 호환을 위해 생성자 오버라이드 불필요 (kwargs로 설정 시 setter 호출됨)
+    
     branch = db.Column(db.String(50))
     agree_marketing = db.Column(db.String(5))
     agree_privacy = db.Column(db.String(5))
@@ -253,9 +304,15 @@ def admin_coupons():
     coupons = []
     
     if keyword:
-        member = Members.query.filter(
-            (Members.phone.like(f"%{keyword}%")) | (Members.name.like(f"%{keyword}%"))
-        ).first()
+        # 암호화 적용으로 인해 like 검색 불가 -> 메모리 필터링
+        all_members = Members.query.all()
+        # 이름 또는 전화번호에 키워드가 포함된 회원 찾기
+        member_candidates = [m for m in all_members if keyword in m.name or keyword in m.phone]
+        
+        # 첫 번째 매칭 회원 선택 (기존 로직 유지)
+        if member_candidates:
+            member = member_candidates[0]
+
         if member:
             coupons = Coupons.query.filter_by(member_id=member.id).order_by(Coupons.is_used.asc(), Coupons.expiry_date.asc()).all()
             
@@ -277,6 +334,46 @@ def use_coupon(coupon_id):
         db.session.commit()
     
     return redirect(f"/admin/coupons?keyword={keyword}")
+
+@app.route("/admin/member/<int:member_id>/edit", methods=["GET", "POST"])
+def edit_member(member_id):
+    if not session.get('admin_logged_in'):
+        return redirect("/admin/login")
+    
+    member = Members.query.get(member_id)
+    if not member:
+        return "회원 정보를 찾을 수 없습니다."
+
+    # 현재 누적 금액 계산
+    current_total = db.session.query(func.sum(Receipts.amount)).filter_by(member_id=member.id).scalar() or 0
+
+    if request.method == "POST":
+        # 1. 기본 정보 수정
+        member.name = request.form.get("name")
+        member.phone = request.form.get("phone")
+        member.birth = request.form.get("birth")
+        member.visit_count = int(request.form.get("visit_count", 0))
+
+        # 2. 누적 금액 수정 (보정 영수증 생성)
+        target_total = int(request.form.get("total_amount", 0))
+        diff = target_total - current_total
+
+        if diff != 0:
+            # 보정용 영수증 생성
+            adjustment_receipt = Receipts(
+                member_id=member.id,
+                receipt_no=f"ADJ-{uuid.uuid4().hex[:8]}", # 고유한 보정 번호
+                branch_paid="관리자보정",
+                amount=diff,
+                visit_date=datetime.now(),
+                is_coupon_used=False
+            )
+            db.session.add(adjustment_receipt)
+        
+        db.session.commit()
+        return redirect("/admin/members")
+
+    return render_template("edit_member.html", member=member, total_amount=current_total)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -4,3 +4,4 @@ SQLAlchemy
 gunicorn
 qrcode[pil]
 google-cloud-vision
+cryptography
