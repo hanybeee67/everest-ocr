@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import uuid
 import json
+import hashlib
 
 # OCR 및 쿠폰 서비스 모듈
 # (주의: services/ocr_parser.py 파일은 아까 수정한 최신 버전을 그대로 둡니다)
@@ -18,6 +19,9 @@ os.makedirs(app.instance_path, exist_ok=True)
 
 # 보안 키 (세션용)
 app.secret_key = "everest_secret_key_8848" 
+
+# 관리자 비밀번호 해시 (SHA-256) -> "everest1234"
+ADMIN_PASSWORD_HASH = "1b77f72b1a137d87dc8e667a47c2c4ffb6fa8156aed1de7bc9d62e0cc5a8fefd"
 
 # DB 설정
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
@@ -195,7 +199,9 @@ def receipt_process():
 def admin_login():
     if request.method == "POST":
         password = request.form.get("password")
-        if password == "everest1234":
+        # SHA-256 해시 비교
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        if password_hash == ADMIN_PASSWORD_HASH:
             session['admin_logged_in'] = True
             return redirect("/admin/members")
         else:
