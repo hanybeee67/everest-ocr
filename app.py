@@ -48,7 +48,7 @@ def decrypt_data(data):
         return data  # 마이그레이션 전 평문일 경우 그대로 반환
 
 # DB 설정
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///members.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(app.instance_path, "members.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
