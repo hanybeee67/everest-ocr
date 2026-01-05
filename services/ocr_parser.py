@@ -168,4 +168,17 @@ def parse_receipt_text(ocr_text):
         safe_branch = data["branch_paid"].replace(' ', '')
         data["receipt_no"] = f"AUTO_{safe_branch}_{data['amount']}_{data['date']}"
 
+    # 6. 환불/단품취소 감지 (NEW)
+    refund_keywords = ["취소", "반품", "걸제취소", "승인취소", "매출취소"]
+    is_refund = False
+    
+    # 텍스트 전체에서 환불 키워드 검색
+    if any(k in clean_text_all for k in refund_keywords):
+        is_refund = True
+        print(f"⚠️ 환불/취소 영수증 감지됨!")
+
+    # 환불이면 금액 마이너스 처리
+    if is_refund and data["amount"] > 0:
+        data["amount"] = data["amount"] * -1
+
     return data

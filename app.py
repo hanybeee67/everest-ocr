@@ -214,6 +214,24 @@ def receipt_process():
     branch_paid = parsed_data["branch_paid"]
     amount = parsed_data["amount"]
 
+    # [Rule 1] 1일 1회 적립 제한
+    # 단, 환불(음수)인 경우는 제한에서 제외하여 언제든 취소 가능하게 함
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # 오늘 이 회원이 올린 영수증이 있는지 확인
+    today_receipt = Receipts.query.filter(
+        Receipts.member_id == member.id, 
+        Receipts.visit_date >= today_start
+    ).first()
+
+    # 금액이 양수(일반 적립)인데 이미 오늘 내역이 있다면 차단
+    if amount > 0 and today_receipt:
+        return render_template("result.html", 
+                               title="적립 제한", 
+                               message="하루에 한 번만 적립 가능합니다. (내일 다시 방문해주세요!)", 
+                               success=False)
+
+    # [Rule 2] 중복 영수증 차단 (기존 로직)
     if Receipts.query.filter_by(receipt_no=receipt_no).first():
         return render_template("result.html", title="이미 등록된 영수증", message="이미 등록하신 영수증입니다.", success=False)
 
@@ -226,9 +244,11 @@ def receipt_process():
     today = datetime.now().strftime("%Y-%m-%d")
     current_count = member.visit_count if member.visit_count is not None else 0
     
-    if current_count == 0 or member.last_visit != today:
-        member.visit_count = current_count + 1
-        member.last_visit = today
+    # 환불(amount < 0)이 아닐 때만 방문 횟수 증가
+    if amount > 0:
+        if current_count == 0 or member.last_visit != today:
+            member.visit_count = current_count + 1
+            member.last_visit = today
     
     db.session.commit()
     
