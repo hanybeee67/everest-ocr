@@ -18,6 +18,12 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, instance_path=os.path.join(APP_ROOT, 'instance'))
 os.makedirs(app.instance_path, exist_ok=True)
 
+# [로컬 개발용] 구글 키 파일 자동 로드
+GOOGLE_KEY_FILE = os.path.join(APP_ROOT, "google_keys.json")
+if os.path.exists(GOOGLE_KEY_FILE):
+    with open(GOOGLE_KEY_FILE, "r", encoding="utf-8") as f:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'] = f.read()
+
 from cryptography.fernet import Fernet
 
 # 보안 키 (세션용)
