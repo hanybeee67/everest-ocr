@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원 정보 수정</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        .btn-group {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .save-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+
+        .cancel-btn {
+            background-color: #ccc;
+            color: #333;
+        }
+
+        .cancel-btn:hover {
+            background-color: #bbb;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>회원 정보 수정</h2>
+        <form action="/admin/member/{{ member.id }}/edit" method="POST">
+            <label>이름</label>
+            <input type="text" name="name" value="{{ member.name }}" required>
+
+            <label>전화번호</label>
+            <input type="text" name="phone" value="{{ member.phone }}" required>
+
+            <label>생년월일</label>
+            <input type="text" name="birth" value="{{ member.birth }}">
+
+            <label>방문 횟수</label>
+            <input type="number" name="visit_count" value="{{ member.visit_count }}">
+
+            <label>누적 사용 금액 (목표 금액 설정)</label>
+            <input type="number" name="total_amount" value="{{ total_amount }}">
+            <div class="info-text">* 현재 누적 금액: {{ total_amount }}원<br>수정 시 차액만큼 보정 영수증이 생성됩니다.</div>
+
+            <div class="btn-group">
+                <button type="submit" class="save-btn">저장</button>
+                <button type="button" class="cancel-btn" onclick="history.back()">취소</button>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

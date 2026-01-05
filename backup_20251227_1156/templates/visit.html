@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재방문 적립</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="header">
+        <h1>재방문 적립</h1>
+        <div class="sub">방문 횟수 + 영수증 스캔 자동 적립</div>
+    </div>
+
+    <div class="card">
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form action="/visit" method="post" enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label>지점명</label>
+                <input type="text" name="branch" value="{{ branch }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>전화번호</label>
+                <input type="tel" name="phone" placeholder="예: 01012345678" required>
+            </div>
+
+            <div class="form-group">
+                <label>영수증 스캔</label>
+                <input type="file" name="receipt_image" accept="image/*" required>
+            </div>
+
+            <button class="btn primary btn-full" type="submit">적립하기</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>
