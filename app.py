@@ -154,7 +154,27 @@ def check():
     member = Members.query.filter_by(phone=phone).first()
 
     if member:
-        return render_template("receipt_upload.html", member_id=member.id, name=member.name, branch_name=branch_name, visit_count=member.visit_count)
+        # 최근 3건 내역 조회 (누적 금액 포함)
+        all_receipts = Receipts.query.filter_by(member_id=member.id).order_by(Receipts.visit_date.asc()).all()
+        history = []
+        cumulative_total = 0
+        for r in all_receipts:
+            cumulative_total += r.amount
+            history.append({
+                "date": r.visit_date.strftime("%Y-%m-%d"),
+                "amount": r.amount,
+                "total": cumulative_total
+            })
+        
+        # 최근 3건만 추출하고 역순 정렬 (최신순)
+        recent_history = history[-3:][::-1]
+
+        return render_template("receipt_upload.html", 
+                               member_id=member.id, 
+                               name=member.name, 
+                               branch_name=branch_name, 
+                               visit_count=member.visit_count,
+                               recent_history=recent_history)
     else:
         return render_template("join.html", phone=phone, branch=branch_name, branch_code=branch_code)
 
@@ -177,7 +197,16 @@ def join():
     )
     db.session.add(new_member)
     db.session.commit()
-    return render_template("receipt_upload.html", member_id=new_member.id, name=new_member.name, branch_name=branch, visit_count=0)
+    
+    # 신규 회원은 내역 없음
+    recent_history = []
+    
+    return render_template("receipt_upload.html", 
+                           member_id=new_member.id, 
+                           name=new_member.name, 
+                           branch_name=branch, 
+                           visit_count=0,
+                           recent_history=recent_history)
 
 @app.route("/receipt/process", methods=["POST"])
 def receipt_process():
