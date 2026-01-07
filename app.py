@@ -151,7 +151,14 @@ def check():
     phone = request.form.get("phone")
     branch_code = request.form.get("branch_code")
     branch_name = BRANCH_MAP.get(branch_code, "에베레스트")
-    member = Members.query.filter_by(phone=phone).first()
+    
+    # [수정] 암호화된 전화번호 매칭을 위해 전체 검색 (암호화가 랜덤 IV를 쓰므로 like나 eq 검색 불가)
+    all_members = Members.query.all()
+    member = None
+    for m in all_members:
+        if m.phone == phone: # m.phone 프로퍼티가 복호화해서 반환
+            member = m
+            break
 
     if member:
         # 최근 3건 내역 조회 (누적 금액 포함)
