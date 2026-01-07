@@ -22,49 +22,61 @@
         </p>
 
         <div class="mobile-card" style="text-align: left;">
-            <form action="/join" method="post">
+            <form action="/join" method="post" id="joinForm">
                 <input type="hidden" name="branch" value="{{ branch }}">
                 <input type="hidden" name="branch_code" value="{{ branch_code }}">
-                <input type="hidden" name="phone" value="{{ phone }}">
+                <!-- Phone value will be constructed before submit -->
+                <input type="hidden" name="phone" id="finalPhone" value="{{ phone }}">
 
                 <div class="input-group">
-                    <label class="input-label">이름</label>
-                    <input type="text" name="name" class="styled-input" placeholder="홍길동" required>
+                    <label class="input-label">성명</label>
+                    <input type="text" name="name" class="styled-input" placeholder="성명" required>
                 </div>
 
                 <div class="input-group">
-                    <label class="input-label">전화번호</label>
-                    <input type="tel" value="{{ phone }}" class="styled-input" readonly>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">생년월일 (선택)</label>
-                    <input type="date" name="birth" class="styled-input">
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">성별 (선택)</label>
-                    <div style="display: flex; gap: 20px; margin-top: 5px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="gender" value="남성" style="margin-right: 8px;"> 남성
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="radio" name="gender" value="여성" style="margin-right: 8px;"> 여성
-                        </label>
+                    <label class="input-label">전화번호 <span
+                            style="font-size: 12px; color: #888; font-weight: normal;">(010 포함 10~11자,
+                            숫자만)</span></label>
+                    <div style="display: flex; align-items: center;">
+                        <span style="font-weight: bold; font-size: 18px; margin-right: 10px; color: #2c3e50;">010</span>
+                        <input type="tel" id="partialPhone" class="styled-input" placeholder="나머지 번호 (빈칸없이)"
+                            maxlength="8" style="flex: 1;" pattern="[0-9]*" inputmode="numeric" required>
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label class="input-label">연령대 (선택)</label>
-                    <select name="age_group" class="styled-input" style="background-color: white;">
-                        <option value="">선택해주세요</option>
-                        <option value="10대">10대</option>
-                        <option value="20대">20대</option>
-                        <option value="30대">30대</option>
-                        <option value="40대">40대</option>
-                        <option value="50대">50대</option>
-                        <option value="60대 이상">60대 이상</option>
-                    </select>
+                    <label class="input-label">생일 <span
+                            style="font-size: 13px; color: #ff7f3f; font-weight: normal;">(생일축하쿠폰 증정용)</span></label>
+                    <input type="tel" name="birth" class="styled-input" placeholder="0101 : 1월 1일" maxlength="4"
+                        pattern="[0-9]*" inputmode="numeric" style="letter-spacing: 2px;">
+                </div>
+
+                <!-- Gender and Age Group Side-by-Side -->
+                <div style="display: flex; gap: 15px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label class="input-label">성별 (선택)</label>
+                        <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; height: 45px;">
+                            <label style="cursor: pointer; display: flex; align-items: center;">
+                                <input type="radio" name="gender" value="남성" style="margin-right: 5px;"> 남성
+                            </label>
+                            <label style="cursor: pointer; display: flex; align-items: center;">
+                                <input type="radio" name="gender" value="여성" style="margin-right: 5px;"> 여성
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="flex: 1;">
+                        <label class="input-label">연령대 (선택)</label>
+                        <select name="age_group" class="styled-input" style="background-color: white;">
+                            <option value="">선택</option>
+                            <option value="10대">10대</option>
+                            <option value="20대">20대</option>
+                            <option value="30대">30대</option>
+                            <option value="40대">40대</option>
+                            <option value="50대">50대</option>
+                            <option value="60대 이상">60대+</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="checkbox-container">
@@ -90,6 +102,41 @@
 
     </div>
 
+    <script>
+        const form = document.getElementById('joinForm');
+        const partialPhone = document.getElementById('partialPhone');
+        const finalPhone = document.getElementById('finalPhone');
+
+        // 1. 숫자만 입력되도록 강제
+        partialPhone.addEventListener('input', function (e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // 2. 폼 제출 시 전화번호 조합 및 검증
+        form.addEventListener('submit', function (e) {
+            const val = partialPhone.value.trim();
+            if (val.length < 7 || val.length > 8) {
+                e.preventDefault();
+                alert("전화번호 뒷자리를 정확히 입력해주세요 (7~8자리).");
+                return;
+            }
+            // 010 + 나머지 조합
+            finalPhone.value = "010" + val;
+        });
+
+        // 초기값 세팅 (혹시 이전 입력값이 있다면)
+        // phone 변수에 이미 값이 있다면 010을 떼고 나머지만 채움
+        const initialPhone = "{{ phone }}";
+        if (initialPhone && initialPhone.length > 3) {
+            // 정규화된 비번이 넘어온다고 가정 (01012345678)
+            const clean = initialPhone.replace(/[^0-9]/g, '');
+            if (clean.startsWith('010')) {
+                partialPhone.value = clean.substring(3);
+            } else {
+                partialPhone.value = clean;
+            }
+        }
+    </script>
 </body>
 
 </html>
