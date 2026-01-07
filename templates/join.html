@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <title>회원가입</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
     <div class="page-wrapper">
-        
+
         <div class="brand-logo">MEMBERSHIP JOIN</div>
 
         <h1 class="welcome-title">회원가입</h1>
-        
+
         <p class="welcome-desc">
             가입 지점: <span class="branch-highlight" style="font-weight: 700;">{{ branch }}</span><br>
             추가 정보를 입력해 주세요.
@@ -40,6 +42,31 @@
                     <input type="date" name="birth" class="styled-input">
                 </div>
 
+                <div class="input-group">
+                    <label class="input-label">성별 (선택)</label>
+                    <div style="display: flex; gap: 20px; margin-top: 5px;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="gender" value="남성" style="margin-right: 8px;"> 남성
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="radio" name="gender" value="여성" style="margin-right: 8px;"> 여성
+                        </label>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">연령대 (선택)</label>
+                    <select name="age_group" class="styled-input" style="background-color: white;">
+                        <option value="">선택해주세요</option>
+                        <option value="10대">10대</option>
+                        <option value="20대">20대</option>
+                        <option value="30대">30대</option>
+                        <option value="40대">40대</option>
+                        <option value="50대">50대</option>
+                        <option value="60대 이상">60대 이상</option>
+                    </select>
+                </div>
+
                 <div class="checkbox-container">
                     <div class="checkbox-row">
                         <input type="checkbox" id="privacy" name="agree_privacy" value="yes" required>
@@ -64,4 +91,5 @@
     </div>
 
 </body>
+
 </html>

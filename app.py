@@ -103,6 +103,8 @@ class Members(db.Model):
     # 기존 코드 호환을 위해 생성자 오버라이드 불필요 (kwargs로 설정 시 setter 호출됨)
     
     branch = db.Column(db.String(50))
+    gender = db.Column(db.String(10))     # [신규] 성별
+    age_group = db.Column(db.String(20))  # [신규] 연령대
     agree_marketing = db.Column(db.String(5))
     agree_privacy = db.Column(db.String(5))
     visit_count = db.Column(db.Integer, default=0)      
@@ -199,12 +201,16 @@ def join():
     phone = request.form.get("phone")
     branch = request.form.get("branch")
     birth = request.form.get("birth")
+    gender = request.form.get("gender")       # [신규]
+    age_group = request.form.get("age_group") # [신규]
+    
     agree_marketing = "yes" if request.form.get("agree_marketing") else "no"
     agree_privacy = "yes" if request.form.get("agree_privacy") else "no"
     today = datetime.now().strftime("%Y-%m-%d")
 
     new_member = Members(
         name=name, phone=phone, branch=branch, birth=birth,
+        gender=gender, age_group=age_group,
         agree_marketing=agree_marketing, agree_privacy=agree_privacy,
         visit_count=0, 
         last_visit=today,
