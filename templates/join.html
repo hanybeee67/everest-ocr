@@ -34,14 +34,9 @@
                 </div>
 
                 <div class="input-group">
-                    <label class="input-label">전화번호 <span
-                            style="font-size: 12px; color: #888; font-weight: normal;">(010 포함 10~11자,
-                            숫자만)</span></label>
-                    <div style="display: flex; align-items: center;">
-                        <span style="font-weight: bold; font-size: 18px; margin-right: 10px; color: #2c3e50;">010</span>
-                        <input type="tel" id="partialPhone" class="styled-input" placeholder="나머지 번호 (빈칸없이)"
-                            maxlength="8" style="flex: 1;" pattern="[0-9]*" inputmode="numeric" required>
-                    </div>
+                    <label class="input-label">전화번호</label>
+                    <input type="tel" name="phone" id="phone" class="styled-input" value="{{ phone }}" maxlength="11"
+                        pattern="[0-9]*" inputmode="numeric" required>
                 </div>
 
                 <div class="input-group">

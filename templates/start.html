@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <title>에베레스트 멤버십</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
     <div class="page-wrapper">
-        
+
         <div class="brand-logo">EVEREST RESTAURANT</div>
 
         <h1 class="welcome-title">
             Welcome to<br>
             <span class="branch-highlight">{{ branch_name }}</span>
         </h1>
-        
+
         <p class="welcome-desc">
             휴대폰 번호 하나로<br>
             간편하게 적립하고 혜택을 받으세요.
@@ -25,17 +27,11 @@
         <div class="mobile-card">
             <form action="/check" method="post">
                 <input type="hidden" name="branch_code" value="{{ branch_code }}">
-                
+
                 <div class="input-group">
                     <label class="input-label">휴대폰 번호</label>
-                    <input type="tel" 
-                           name="phone" 
-                           class="styled-input" 
-                           placeholder="01012345678" 
-                           required 
-                           autocomplete="off"
-                           inputmode="numeric" 
-                           pattern="[0-9]*">
+                    <input type="tel" name="phone" id="phoneInput" class="styled-input" value="010" required
+                        autocomplete="off" inputmode="numeric" pattern="[0-9]*" maxlength="11">
                 </div>
 
                 <button type="submit" class="btn-primary">
@@ -44,12 +40,48 @@
             </form>
         </div>
 
-        <div class="footer-text">
-            © Everest Restaurant Corp.<br>
-            Membership System
-        </div>
+        <script>
+            const phoneInput = document.getElementById('phoneInput');
+
+            // Focus 시 커서가 끝으로 가도록 (선택 사항)
+            phoneInput.addEventListener('focus', function () {
+                const val = this.value;
+                this.value = '';
+                this.value = val;
+            });
+
+            phoneInput.addEventListener('input', function (e) {
+                // 숫자만 입력 가능
+                let val = this.value.replace(/[^0-9]/g, '');
+
+                // 010 유지
+                if (!val.startsWith('010')) {
+                    val = '010' + val.replace(/^010/, '');
+                }
+
+                // 11자리 제한 (010 + 8자리)
+                if (val.length > 11) {
+                    val = val.slice(0, 11);
+                }
+
+                this.value = val;
+            });
+        </script>
+    </div>
+
+    <button type="submit" class="btn-primary">
+        시작하기
+    </button>
+    </form>
+    </div>
+
+    <div class="footer-text">
+        © Everest Restaurant Corp.<br>
+        Membership System
+    </div>
 
     </div>
 
 </body>
+
 </html>
