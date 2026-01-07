@@ -79,7 +79,9 @@ def parse_receipt_text(ocr_text):
     # [보조 함수] 한 줄에서 오른쪽 끝에 있는 유효한 금액 추출
     def get_amount_from_line(text):
         # 1. 승인번호, 전화번호 등이 포함된 줄은 위험하므로 거름 (단, 키워드가 명확히 있는 줄이면 통과)
-        is_risky_line = any(bad_word in text for bad_word in ["승인번호", "가맹점", "사업자", "Tel", "TEL", "문의"])
+        # "카드번호", "가맹점번호" 등도 추가
+        bad_words = ["승인번호", "승인", "가맹점", "사업자", "Tel", "TEL", "문의", "카드번호", "Card", "No", "NO", "ID"]
+        is_risky_line = any(bad_word in text for bad_word in bad_words)
         
         numbers = re.findall(r'([0-9,.]+)', text)
         if numbers:
@@ -89,9 +91,14 @@ def parse_receipt_text(ocr_text):
                     val = int(clean_num)
                     # 100원 ~ 5천만원
                     if 100 <= val < 50000000:
-                        # 위험한 줄인데 숫자가 8자리 이상(승인번호 의심)이면 무시
-                        if is_risky_line and len(clean_num) >= 8:
-                            continue
+                        # [핵심 수정] 8자리 이상 숫자는 '승인번호'일 확률이 매우 높음
+                        # 금액이 1000만원 이상일 경우 반드시 콤마(,)가 있어야만 인정 (휴리스틱)
+                        if len(clean_num) >= 8:
+                            if ',' not in num_str:
+                                continue # 콤마 없는 큰 숫자는 무시 (승인번호 오인 방지)
+                            if is_risky_line:
+                                continue # 위험한 단어가 있는 줄의 큰 숫자는 무시
+                        
                         return val
         return None
 
@@ -133,7 +140,8 @@ def parse_receipt_text(ocr_text):
         
         for line in lines:
             # ★ 핵심 수정: 승인번호, 전화번호, 날짜가 있는 줄은 아예 무시합니다.
-            if any(bad in line for bad in ["승인", "번호", "Tel", "TEL", "사업자", "Date", "Time", "날짜"]):
+            # "No", "ID", "Code" 등 추가
+            if any(bad in line for bad in ["승인", "번호", "Tel", "TEL", "사업자", "Date", "Time", "날짜", "Card", "No", "NO", "ID", "Code"]):
                 continue
 
             candidates = re.findall(r'([0-9,]+)', line)
@@ -143,6 +151,10 @@ def parse_receipt_text(ocr_text):
                     val = int(val_str)
                     # 100원 ~ 5천만원
                     if 100 <= val < 50000000: 
+                        # [비상대책 강화] 콤마가 없는 8자리 이상 숫자는 절대 금액으로 인정 안 함 (승인번호 회피)
+                        if len(val_str) >= 8 and ',' not in cand:
+                            continue
+                        
                         if val > max_val:
                             max_val = val
                             

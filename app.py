@@ -152,11 +152,19 @@ def check():
     branch_code = request.form.get("branch_code")
     branch_name = BRANCH_MAP.get(branch_code, "에베레스트")
     
-    # [수정] 암호화된 전화번호 매칭을 위해 전체 검색 (암호화가 랜덤 IV를 쓰므로 like나 eq 검색 불가)
+    # [수정] 암호화된 전화번호 매칭을 위해 전체 검색 + 정규화(하이픈/공백 제거) 비교
     all_members = Members.query.all()
     member = None
+    
+    # 입력된 전화번호 정규화 (숫자만 남김)
+    normalized_input_phone = phone.replace("-", "").replace(" ", "").strip()
+    
     for m in all_members:
-        if m.phone == phone: # m.phone 프로퍼티가 복호화해서 반환
+        # DB에 저장된 번호 복호화 후 정규화
+        stored_phone = m.phone or ""
+        normalized_stored_phone = stored_phone.replace("-", "").replace(" ", "").strip()
+        
+        if normalized_stored_phone == normalized_input_phone:
             member = m
             break
 
