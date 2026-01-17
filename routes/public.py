@@ -133,6 +133,10 @@ def receipt_process():
             
         ocr_result_text = detect_text_from_receipt(image_path)
         
+        # [삭제] OCR 처리 후 이미지 파일 즉시 삭제
+        if image_path and os.path.exists(image_path):
+            os.remove(image_path)
+        
     except Exception as e:
         if image_path and os.path.exists(image_path):
             try: os.remove(image_path)
