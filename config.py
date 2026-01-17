@@ -31,7 +31,9 @@ def decrypt_data(data):
         return data  # 마이그레이션 전 평문일 경우 그대로 반환
 
 class Config:
-    SECRET_KEY = "everest_secret_key_8848"
+    SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
+    if not SECRET_KEY:
+        raise RuntimeError("FLASK_SECRET_KEY environment variable is not set.")
     database_url = os.environ.get('DATABASE_URL')
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)

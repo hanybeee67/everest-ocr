@@ -23,6 +23,10 @@ def create_app():
     # Migration 초기화
     migrate = Migrate(app, db)
     
+    # Rate Limiter 초기화
+    from extensions import limiter
+    limiter.init_app(app)
+    
     # Blueprint 등록
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
@@ -37,4 +41,4 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)

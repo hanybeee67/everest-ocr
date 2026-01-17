@@ -11,6 +11,7 @@ from services.coupon_manager import issue_coupon_if_qualified
 from PIL import Image
 
 public_bp = Blueprint('public', __name__)
+from extensions import limiter
 
 @public_bp.route("/")
 def index():
@@ -23,6 +24,7 @@ def start():
     return render_template("start.html", branch_code=branch_code, branch_name=branch_name)
 
 @public_bp.route("/check", methods=["POST"])
+@limiter.limit("5 per minute") # [보안] 전화번호 조회 폭탄 방지
 def check():
     phone = request.form.get("phone")
     branch_code = request.form.get("branch_code")
@@ -98,6 +100,7 @@ def join():
                            recent_history=recent_history)
 
 @public_bp.route("/receipt/process", methods=["POST"])
+@limiter.limit("3 per minute") # [보안] 이미지 업로드 폭탄 방지
 def receipt_process():
     member_id = request.form.get("member_id")
     member = Members.query.get(member_id)

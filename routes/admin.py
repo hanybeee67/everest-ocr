@@ -7,8 +7,10 @@ from models import db, Members, Receipts, Coupons
 from config import Config, check_admin_password
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin_8848')
+from extensions import limiter
 
 @admin_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute") # [보안] 관리자 비밀번호 대입 공격 방지
 def admin_login():
     if request.method == "POST":
         password = request.form.get("password")
