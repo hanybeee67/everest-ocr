@@ -5,3 +5,6 @@ gunicorn
 qrcode[pil]
 google-cloud-vision
 cryptography
+bcrypt
+Flask-Migrate
+alembic
