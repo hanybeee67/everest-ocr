@@ -47,8 +47,8 @@ class Config:
     # 전화번호 검색용 해시 Salt (Pepper)
     PHONE_HASH_PEPPER = os.environ.get("PHONE_HASH_PEPPER", "default_pepper")
     
-    # 파일 업로드 제한 (5MB)
-    MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+    # 파일 업로드 제한 (32MB) - 고화질 사진 대응
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024
 
 def check_admin_password(password):
     """입력받은 비밀번호와 환경변수의 Bcrypt 해시를 비교 검증"""
