@@ -9,7 +9,7 @@ if not os.path.exists(save_folder):
 # ======================================================
 # ★★★ Render 배포 주소 적용 완료! ★★★
 # ======================================================
-base_url = "https://everest-ocr.onrender.com" 
+base_url = "https://membership.everestfood.com" 
 
 
 # 3. 지점 목록 (URL 파라미터용 코드 : 한글 지점명)
