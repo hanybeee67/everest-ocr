@@ -136,6 +136,24 @@ def receipt_process():
             
         ocr_result_text = detect_text_from_receipt(image_path)
         
+        # [검증] '에베레스트' 키워드 확인 (타 업장 영수증 방지)
+        is_valid_receipt = False
+        if ocr_result_text:
+            keywords = ["에베레스트", "EVEREST", "everest", "Everest"]
+            for k in keywords:
+                if k in ocr_result_text:
+                    is_valid_receipt = True
+                    break
+        
+        if not is_valid_receipt:
+            # 실패 시에도 이미지는 삭제해야 함 (아래 finally 혹은 로직 흐름상 여기서 삭제)
+            if image_path and os.path.exists(image_path):
+                os.remove(image_path)
+            return render_template("result.html", 
+                                 title="인증 실패", 
+                                 message="영수증에서 '에베레스트' 글자를 찾을 수 없습니다.<br>올바른 영수증인지 확인해주세요.", 
+                                 success=False)
+        
         # [삭제] OCR 처리 후 이미지 파일 즉시 삭제
         if image_path and os.path.exists(image_path):
             os.remove(image_path)
