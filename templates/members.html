@@ -149,10 +149,10 @@
     <h2>
         <span>📊 에베레스트 회원 관리</span>
         <div class="btn-group">
-            <a href="/admin/coupons" class="btn btn-coupon">🎫 쿠폰 사용</a>
+            <a href="/admin_8848/coupons" class="btn btn-coupon">🎫 쿠폰 사용</a>
 
             <button class="btn btn-print" onclick="window.print()">🖨️ 명단 인쇄</button>
-            <a href="/admin/logout" class="btn btn-logout">로그아웃</a>
+            <a href="/admin_8848/logout" class="btn btn-logout">로그아웃</a>
         </div>
     </h2>
 
@@ -169,10 +169,10 @@
 
     <div class="sort-menu" style="margin-bottom: 15px;">
         <strong>정렬:</strong>
-        <a href="/admin/members?sort=date" style="color:#2c3e50; margin-right:10px;">[최신순]</a>
-        <a href="/admin/members?sort=name" style="color:#2c3e50; margin-right:10px;">[이름순]</a>
-        <a href="/admin/members?sort=visit" style="color:#2c3e50; margin-right:10px;">[방문왕순]</a>
-        <a href="/admin/members?sort=branch" style="color:#2c3e50;">[지점별]</a>
+        <a href="/admin_8848/members?sort=date" style="color:#2c3e50; margin-right:10px;">[최신순]</a>
+        <a href="/admin_8848/members?sort=name" style="color:#2c3e50; margin-right:10px;">[이름순]</a>
+        <a href="/admin_8848/members?sort=visit" style="color:#2c3e50; margin-right:10px;">[방문왕순]</a>
+        <a href="/admin_8848/members?sort=branch" style="color:#2c3e50;">[지점별]</a>
     </div>
 
     <table>
@@ -203,9 +203,9 @@
                 <td>{{ member.last_visit }}</td>
                 <td>{{ member.created_at }}</td>
                 <td>
-                    <a href="/admin/member/{{ member.id }}/edit"
+                    <a href="/admin_8848/member/{{ member.id }}/edit"
                         style="color: blue; text-decoration: none; margin-right: 5px;">[수정]</a>
-                    <a href="/admin/delete_member/{{ member.id }}" class="btn-delete"
+                    <a href="/admin_8848/delete_member/{{ member.id }}" class="btn-delete"
                         onclick="return confirmDelete()">삭제</a>
                 </td>
             </tr>

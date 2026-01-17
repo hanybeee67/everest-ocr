@@ -9,3 +9,5 @@ bcrypt
 Flask-Migrate
 alembic
 Flask-Limiter
+python-docx
+psycopg2-binary

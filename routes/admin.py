@@ -17,7 +17,7 @@ def admin_login():
         # Bcrypt 검증
         if check_admin_password(password):
             session['admin_logged_in'] = True
-            return redirect("/admin/members")
+            return redirect("/admin_8848/members")
         else:
             return render_template("login.html", error="암호가 틀렸습니다.")
     return render_template("login.html")
@@ -25,12 +25,12 @@ def admin_login():
 @admin_bp.route("/logout")
 def admin_logout():
     session.pop('admin_logged_in', None)
-    return redirect("/admin/login")
+    return redirect("/admin_8848/login")
 
 @admin_bp.route("/members")
 def admin_members():
     if not session.get('admin_logged_in'):
-        return redirect("/admin/login")
+        return redirect("/admin_8848/login")
 
     sort = request.args.get("sort", "date")
     if sort == "name": members = Members.query.order_by(Members.name.asc()).all()
@@ -47,20 +47,20 @@ def admin_members():
 @admin_bp.route("/delete_member/<int:id>")
 def delete_member(id):
     if not session.get('admin_logged_in'):
-        return redirect("/admin/login")
+        return redirect("/admin_8848/login")
     member = Members.query.get(id)
     if member:
         Receipts.query.filter_by(member_id=id).delete()
         Coupons.query.filter_by(member_id=id).delete()
         db.session.delete(member)
         db.session.commit()
-    return redirect("/admin/members")
+    return redirect("/admin_8848/members")
 
 # [신규] 쿠폰 관리 페이지
 @admin_bp.route("/coupons")
 def admin_coupons():
     if not session.get('admin_logged_in'):
-        return redirect("/admin/login")
+        return redirect("/admin_8848/login")
     
     keyword = request.args.get("keyword", "").strip()
     member = None
@@ -85,7 +85,7 @@ def admin_coupons():
 @admin_bp.route("/use_coupon/<int:coupon_id>")
 def use_coupon(coupon_id):
     if not session.get('admin_logged_in'):
-        return redirect("/admin/login")
+        return redirect("/admin_8848/login")
     
     coupon = Coupons.query.get(coupon_id)
     keyword = request.args.get("keyword", "")
@@ -96,12 +96,12 @@ def use_coupon(coupon_id):
         coupon.used_at_branch = "관리자처리" 
         db.session.commit()
     
-    return redirect(f"/admin/coupons?keyword={keyword}")
+    return redirect(f"/admin_8848/coupons?keyword={keyword}")
 
 @admin_bp.route("/member/<int:member_id>/edit", methods=["GET", "POST"])
 def edit_member(member_id):
     if not session.get('admin_logged_in'):
-        return redirect("/admin/login")
+        return redirect("/admin_8848/login")
     
     member = Members.query.get(member_id)
     if not member:
@@ -134,6 +134,6 @@ def edit_member(member_id):
             db.session.add(adjustment_receipt)
         
         db.session.commit()
-        return redirect("/admin/members")
+        return redirect("/admin_8848/members")
 
     return render_template("edit_member.html", member=member, total_amount=current_total)

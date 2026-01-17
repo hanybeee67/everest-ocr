@@ -140,7 +140,7 @@
     <div class="container">
         <h2>🎟️ 쿠폰 사용 처리</h2>
 
-        <form action="/admin/coupons" method="GET" class="search-box">
+        <form action="/admin_8848/coupons" method="GET" class="search-box">
             <input type="text" name="keyword" placeholder="손님 전화번호 뒷자리 또는 이름 입력..." value="{{ keyword }}" autofocus>
             <button type="submit" class="btn-search">🔍 조회</button>
         </form>
@@ -164,7 +164,7 @@
 
             <div>
                 {% if not coupon.is_used %}
-                <a href="/admin/use_coupon/{{ coupon.id }}?keyword={{ keyword }}" class="btn-use"
+                <a href="/admin_8848/use_coupon/{{ coupon.id }}?keyword={{ keyword }}" class="btn-use"
                     onclick="return confirmUse()">사용하기</a>
                 {% else %}
                 <span class="badge-used">사용완료</span>
@@ -183,7 +183,7 @@
         {% endif %}
 
         <br>
-        <a href="/admin/members" class="btn-home">← 회원 관리 목록으로 돌아가기</a>
+        <a href="/admin_8848/members" class="btn-home">← 회원 관리 목록으로 돌아가기</a>
     </div>
 
 </body>
