@@ -17,6 +17,10 @@ from extensions import limiter
 def index():
     return redirect("/start?branch=dongdaemun")
 
+@public_bp.route("/admin")
+def admin_redirect():
+    return redirect("/admin_8848/login")
+
 @public_bp.route("/start")
 def start():
     branch_code = request.args.get("branch", "dongdaemun")

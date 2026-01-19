@@ -27,6 +27,8 @@ def admin_logout():
     session.pop('admin_logged_in', None)
     return redirect("/admin_8848/login")
 
+@admin_bp.route("/members")
+def admin_members():
     if not session.get('admin_logged_in'):
         return redirect("/admin_8848/login")
 
