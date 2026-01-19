@@ -33,7 +33,7 @@ def admin_members():
         return redirect("/admin_8848/login")
 
     sort = request.args.get("sort", "date")
-    if sort == "name": members = Members.query.order_by(Members.name.asc()).all()
+    if sort == "name": members = Members.query.order_by(Members._name.asc()).all()
     elif sort == "branch": members = Members.query.order_by(Members.branch.asc()).all()
     elif sort == "visit": members = Members.query.order_by(Members.visit_count.desc()).all()
     else: members = Members.query.order_by(Members.id.desc()).all()
