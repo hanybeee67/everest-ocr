@@ -35,6 +35,34 @@ def check():
     try:
         input_hash = Members.generate_phone_hash(phone)
         member = Members.query.filter_by(phone_hash_value=input_hash).first()
+        
+        # [Fallback] 해시 조회 실패 시, 전체 검색 (Legacy Data 또는 해시 미생성 건 대응)
+        if not member:
+            current_app.logger.info(f"Hash lookup failed for {phone}, trying fallback...")
+            # 입력값 정규화
+            norm_input = phone.replace("-", "").replace(" ", "").strip()
+            
+            # 전체 회원 순회 (성능 이슈 가능성 있으나, 정확도 우선)
+            # 최적화를 위해 fetchall 대신 yield_per 사용 고려 가능하나, 일단 단순 순회
+            all_members = Members.query.all() 
+            for m in all_members:
+                try:
+                    # m.phone은 복호화된 값 반환
+                    db_phone = m.phone
+                    if not db_phone: continue
+                    
+                    norm_db = db_phone.replace("-", "").replace(" ", "").strip()
+                    if norm_db == norm_input:
+                        member = m
+                        # [Self-Healing] 해시가 없거나 잘못되었다면 갱신
+                        if m.phone_hash_value != input_hash:
+                            m.phone_hash_value = input_hash
+                            db.session.commit()
+                            current_app.logger.info(f"Self-healed hash for member {m.id}")
+                        break
+                except Exception:
+                    continue
+
     except Exception as e:
         # 해시 생성 실패 등 예외 발생 시 안전하게 None 처리
         current_app.logger.error(f"Phone lookup failed: {e}")
