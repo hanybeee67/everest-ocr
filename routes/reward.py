@@ -21,16 +21,27 @@ def status():
         member = Members.query.filter_by(phone_hash_value=input_hash).first()
         
         if not member:
+        if not member:
             # Fallback (전체 검색) - 테스트 편의성을 위해
             all_members = Members.query.all()
-            norm_input = phone.replace("-", "").replace(" ", "").strip()
+            # 숫자만 추출하여 정규화
+            norm_input = "".join(filter(str.isdigit, phone))
+            
+            print(f"[DEBUG] Looking for phone(digits): {norm_input}")
+            
             for m in all_members:
-                 if m.phone and m.phone.replace("-", "").replace(" ", "").strip() == norm_input:
-                     member = m
-                     break
+                 try:
+                     db_phone = m.phone or ""
+                     norm_db = "".join(filter(str.isdigit, db_phone))
+                     if norm_db == norm_input:
+                         member = m
+                         print(f"[DEBUG] Found match! ID: {m.id}, Phone: {db_phone}")
+                         break
+                 except Exception as e:
+                     continue # 복호화 실패 등 무시
                      
     if not member:
-        return "회원 정보를 찾을 수 없습니다. (올바른 ID 또는 전화번호를 입력해주세요)", 404
+        return f"회원 정보를 찾을 수 없습니다. (입력: {phone})", 404
         
     # 사용 가능 쿠폰 조회
     available_coupons = Coupons.query.filter_by(member_id=member.id, status='AVAILABLE').all()
