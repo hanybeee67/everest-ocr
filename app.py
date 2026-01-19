@@ -39,6 +39,16 @@ def create_app():
     
     # DB 테이블 생성 (앱 컨텍스트 내에서 실행)
     with app.app_context():
+        # [보안/운영] 자동 마이그레이션 실행
+        # Render 등 배포 환경에서 DB 스키마를 최신 상태로 유지하기 위함
+        from flask_migrate import upgrade
+        try:
+            upgrade()
+            print("DB Upgrade (Migration) success!")
+        except Exception as e:
+            print(f"DB Upgrade failed: {e}")
+            # 마이그레이션 실패 시에도 create_all 시도 (혹시 초기 상태일 경우)
+            
         db.create_all()
 
     return app
