@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>에베레스트 리워드</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
@@ -119,8 +119,8 @@
     <div class="container">
         <div class="balance-card">
             <div>{{ member.name }}님의 포인트</div>
-            <div class="balance-amount">{{ "{:,}".format(member.current_reward_balance or 0) }} P</div>
-            <div>누적 사용액: {{ "{:,}".format(member.total_lifetime_spend or 0) }}원</div>
+            <div class="balance-amount">{{ "{:,}".format((member.current_reward_balance or 0)|int) }} P</div>
+            <div>누적 사용액: {{ "{:,}".format((member.total_lifetime_spend or 0)|int) }}원</div>
         </div>
 
         <h3>🎁 리워드 교환</h3>
@@ -131,9 +131,10 @@
                     <h3>{{ info.name }}</h3>
                     <div class="tier-cost">{{ "{:,}".format(info.cost) }} P 필요</div>
                 </div>
-                <button class="btn-claim {% if (member.current_reward_balance or 0) >= info.cost %}active{% endif %}"
+                <button
+                    class="btn-claim {% if ((member.current_reward_balance or 0)|int) >= info.cost %}active{% endif %}"
                     onclick="claimReward({{ level }}, '{{ info.name }}', {{ info.cost }})" {% if
-                    (member.current_reward_balance or 0) < info.cost %}disabled{% endif %}>
+                    ((member.current_reward_balance or 0)|int) < info.cost %}disabled{% endif %}>
                     교환하기
                 </button>
             </div>
@@ -148,7 +149,7 @@
                 <div>{{ coupon.coupon_type }}</div>
                 <div class="coupon-code">{{ coupon.coupon_code }}</div>
                 <div style="font-size: 0.9em; color: #666;">
-                    유효기간: ~{{ coupon.expiry_date.strftime('%Y-%m-%d') }}
+                    유효기간: ~{{ coupon.expiry_date.strftime('%Y-%m-%d') if coupon.expiry_date else '무제한' }}
                     <span class="badge">사용가능</span>
                 </div>
             </div>
