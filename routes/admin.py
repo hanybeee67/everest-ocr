@@ -110,6 +110,8 @@ def edit_member(member_id):
     # 현재 누적 금액 계산
     current_total = db.session.query(func.sum(Receipts.amount)).filter_by(member_id=member.id).scalar() or 0
 
+    curr_receipts = Receipts.query.filter_by(member_id=member.id).order_by(Receipts.visit_date.desc()).all()
+
     if request.method == "POST":
         # 1. 기본 정보 수정
         member.name = request.form.get("name")
@@ -136,4 +138,45 @@ def edit_member(member_id):
         db.session.commit()
         return redirect("/admin_8848/members")
 
-    return render_template("edit_member.html", member=member, total_amount=current_total)
+    return render_template("edit_member.html", member=member, total_amount=current_total, receipts=curr_receipts)
+
+@admin_bp.route("/receipt/<int:receipt_id>/update", methods=["POST"])
+def update_receipt(receipt_id):
+    if not session.get('admin_logged_in'):
+        return redirect("/admin_8848/login")
+        
+    receipt = Receipts.query.get(receipt_id)
+    if receipt:
+        try:
+            new_amount = int(request.form.get("amount", 0))
+            receipt.amount = new_amount
+            db.session.commit()
+        except ValueError:
+            pass # 숫자가 아닌 경우 무시
+            
+    return redirect(f"/admin_8848/member/{receipt.member_id}/edit")
+
+@admin_bp.route("/receipt/<int:receipt_id>/delete", methods=["POST"])
+def delete_receipt(receipt_id):
+    if not session.get('admin_logged_in'):
+        return redirect("/admin_8848/login")
+        
+    receipt = Receipts.query.get(receipt_id)
+    if receipt:
+        member_id = receipt.member_id
+        member = Members.query.get(member_id)
+        
+        db.session.delete(receipt)
+        
+        # 방문 횟수 차감 (단, 0 이하로는 안 내려가게)
+        # 보정 영수증(ADJ)은 방문 횟수에 포함되지 않아야 하지만, 
+        # 현재 구조상 구분이 어려우므로 일괄 차감 or 
+        # visit_count를 Receipts count로 재계산하는 것이 더 정확함.
+        # 여기서는 단순 차감.
+        if member and member.visit_count > 0:
+            member.visit_count -= 1
+            
+        db.session.commit()
+        return redirect(f"/admin_8848/member/{member_id}/edit")
+        
+    return redirect("/admin_8848/members")

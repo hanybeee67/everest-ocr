@@ -92,30 +92,85 @@
 </head>
 
 <body>
-    <div class="container">
+    <div class="container" style="width: 800px; max-width: 95%;">
         <h2>회원 정보 수정</h2>
-        <form action="/admin_8848/member/{{ member.id }}/edit" method="POST">
-            <label>이름</label>
-            <input type="text" name="name" value="{{ member.name }}" required>
 
-            <label>전화번호</label>
-            <input type="text" name="phone" value="{{ member.phone }}" required>
+        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+            <!-- 왼쪽: 회원 기본 정보 Form -->
+            <div style="flex: 1; min-width: 300px;">
+                <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">기본 정보</h3>
+                <form action="/admin_8848/member/{{ member.id }}/edit" method="POST">
+                    <label>이름</label>
+                    <input type="text" name="name" value="{{ member.name }}" required>
 
-            <label>생년월일</label>
-            <input type="text" name="birth" value="{{ member.birth }}">
+                    <label>전화번호</label>
+                    <input type="text" name="phone" value="{{ member.phone }}" required>
 
-            <label>방문 횟수</label>
-            <input type="number" name="visit_count" value="{{ member.visit_count }}">
+                    <label>생년월일</label>
+                    <input type="text" name="birth" value="{{ member.birth }}">
 
-            <label>누적 사용 금액 (목표 금액 설정)</label>
-            <input type="number" name="total_amount" value="{{ total_amount }}">
-            <div class="info-text">* 현재 누적 금액: {{ total_amount }}원<br>수정 시 차액만큼 보정 영수증이 생성됩니다.</div>
+                    <label>방문 횟수 (Total Visits)</label>
+                    <input type="number" name="visit_count" value="{{ member.visit_count }}">
 
-            <div class="btn-group">
-                <button type="submit" class="save-btn">저장</button>
-                <button type="button" class="cancel-btn" onclick="history.back()">취소</button>
+                    <label>총 누적 금액 (자동 합계: {{ "{:,}".format(total_amount) }}원)</label>
+                    <div class="info-text" style="background:#f9f9f9; padding:10px; border-radius:5px; margin-top:5px;">
+                        ※ 금액 수정은 우측의 <strong>개별 영수증 수정</strong>을 이용해주세요.<br>
+                        전체 금액 강제 조정이 필요한 경우만 아래에 입력하세요.
+                    </div>
+                    <input type="number" name="total_amount" value="{{ total_amount }}" style="margin-top:10px;">
+
+                    <div class="btn-group">
+                        <button type="submit" class="save-btn">기본 정보 저장</button>
+                        <button type="button" class="cancel-btn"
+                            onclick="location.href='/admin_8848/members'">목록으로</button>
+                    </div>
+                </form>
             </div>
-        </form>
+
+            <!-- 오른쪽: 영수증 목록 및 개별 수정 -->
+            <div style="flex: 1.5; min-width: 350px;">
+                <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">방문/결제 기록 ({{ receipts|length }}건)</h3>
+
+                <div style="max-height: 500px; overflow-y: auto; background: white; border: 1px solid #eee;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #f1f1f1; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 8px; text-align: left;">날짜/지점</th>
+                                <th style="padding: 8px; text-align: right;">금액</th>
+                                <th style="padding: 8px; text-align: center;">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in receipts %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 8px; color: #555;">
+                                    <div style="font-weight: bold;">{{ r.visit_date.strftime('%Y-%m-%d') }}</div>
+                                    <div style="font-size: 11px; color: #888;">{{ r.branch_paid }}</div>
+                                </td>
+                                <td style="padding: 8px; text-align: right;">
+                                    <!-- 인라인 금액 수정 폼 -->
+                                    <form action="/admin_8848/receipt/{{ r.id }}/update" method="POST"
+                                        style="display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
+                                        <input type="number" name="amount" value="{{ r.amount }}"
+                                            style="width: 80px; padding: 4px; text-align: right; font-size: 13px; margin:0;">
+                                        <button type="submit"
+                                            style="padding: 4px 8px; font-size: 11px; flex: none; width: auto; background: #2196F3; color: white;">수정</button>
+                                    </form>
+                                </td>
+                                <td style="padding: 8px; text-align: center;">
+                                    <form action="/admin_8848/receipt/{{ r.id }}/delete" method="POST"
+                                        onsubmit="return confirm('정말 이 기록을 삭제하시겠습니까?\n방문 횟수도 1 차감됩니다.');">
+                                        <button type="submit"
+                                            style="padding: 4px 8px; font-size: 11px; flex: none; width: auto; background: #ff4444; color: white;">삭제</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 
