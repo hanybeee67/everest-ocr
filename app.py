@@ -49,6 +49,13 @@ def create_app():
             print(f"DB Upgrade failed: {e}")
             # 마이그레이션 실패 시에도 create_all 시도 (혹시 초기 상태일 경우)
             
+        # [Self-Healing] 직접 스키마 검사 및 복구 수행
+        try:
+            from services.db_fixer import check_and_fix_schema
+            check_and_fix_schema()
+        except Exception as e:
+            print(f"DB Self-Healing failed: {e}")
+
         db.create_all()
 
     return app
