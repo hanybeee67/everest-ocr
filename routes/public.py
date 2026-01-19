@@ -144,29 +144,37 @@ def receipt_process():
     if file.filename == '':
         return render_template("result.html", title="오류", message="파일을 선택해주세요.", success=False)
     
-    # [보안] 파일 확장자 검사
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+    # [보안] 파일 확장자 검사 (heic 추가 support attempt)
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'heic', 'heif'}
     if '.' not in file.filename or file.filename.rsplit('.', 1)[1].lower() not in ALLOWED_EXTENSIONS:
-        return render_template("result.html", title="오류", message="jpg, jpeg, png 파일만 업로드 가능합니다.", success=False)
+        return render_template("result.html", title="오류", message="이미지 파일(jpg, png 등)만 업로드 가능합니다.", success=False)
 
     ocr_result_text = None
     image_path = None
 
     try:
-        image_filename = str(uuid.uuid4()) + ".jpg"
+        # 파일명 안전하게 저장
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        image_filename = str(uuid.uuid4()) + f".{ext}"
         image_path = os.path.join(current_app.instance_path, image_filename)
         file.save(image_path)
         
-        # [보안] 이미지 무결성 검사 (Pillow)
+        current_app.logger.info(f"Image saved to {image_path}, size: {os.path.getsize(image_path)}")
+
+        # [보안] 이미지 무결성 검사 (Pillow) - HEIC는 Pillow 기본 미지원일 수 있으므로 try-except 완화
         try:
             with Image.open(image_path) as img:
                 img.verify()
-        except Exception:
-            try: os.remove(image_path)
-            except: pass
-            return render_template("result.html", title="보안 경고", message="유효하지 않은 이미지 파일입니다.", success=False)
+        except Exception as e:
+            current_app.logger.warning(f"Image verification warning (might be HEIC): {e}")
+            # HEIC라면 검증 실패해도 일단 진행 (Google Vision이 처리하도록)
+            if ext not in ['heic', 'heif']:
+                try: os.remove(image_path)
+                except: pass
+                return render_template("result.html", title="보안 경고", message="유효하지 않은 이미지 파일입니다.", success=False)
             
         ocr_result_text = detect_text_from_receipt(image_path)
+        current_app.logger.info(f"OCR Result Length: {len(ocr_result_text) if ocr_result_text else 0}")
         
         # [검증] '에베레스트' 키워드 확인 (타 업장 영수증 방지)
         is_valid_receipt = False
@@ -178,18 +186,21 @@ def receipt_process():
                     break
         
         if not is_valid_receipt:
-            # 실패 시에도 이미지는 삭제해야 함 (아래 finally 혹은 로직 흐름상 여기서 삭제)
+            # 실패 시에도 이미지는 삭제해야 함
             if image_path and os.path.exists(image_path):
                 os.remove(image_path)
+            
+            # OCR 텍스트가 있는데 키워드가 없는 경우 -> 어떤 글자가 읽혔는지 로그
+            if ocr_result_text:
+                current_app.logger.warning(f"Invalid Receipt Text: {ocr_result_text[:100]}...")
+                
             return render_template("result.html", 
                                  title="인증 실패", 
                                  message="영수증에서 '에베레스트' 글자를 찾을 수 없습니다.<br>올바른 영수증인지 확인해주세요.", 
                                  success=False)
         
-        # [삭제 로직 변경] 조건부 자동 승인 로직에서 처리하므로 여기서는 삭제하지 않음
-        pass
-        
     except Exception as e:
+        current_app.logger.error(f"Receipt Process Error: {e}", exc_info=True)
         if image_path and os.path.exists(image_path):
             try: os.remove(image_path)
             except: pass
@@ -202,6 +213,8 @@ def receipt_process():
     receipt_no = parsed_data["receipt_no"]
     branch_paid = parsed_data["branch_paid"]
     amount = parsed_data["amount"]
+    
+    current_app.logger.info(f"Parsed Data: {parsed_data}")
 
     # [Rule 1] 1일 1회 적립 제한
     # 단, 환불(음수)인 경우는 제한에서 제외하여 언제든 취소 가능하게 함
