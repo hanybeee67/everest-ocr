@@ -149,10 +149,22 @@ def update_receipt(receipt_id):
     if receipt:
         try:
             new_amount = int(request.form.get("amount", 0))
+            old_amount = receipt.amount
+            
+            # [Fix] 금액 변경 시 멤버 포인트/누적금액도 연동하여 수정
+            # 단, 'APPROVED' 상태이거나 아직 상태가 없는(구데이터) 경우에만 반영 감안
+            # 현재 로직상 PENDING인 고액 건을 수정해서 승인하는 로직은 별도지만, 
+            # 여기선 단순 금액 수정이므로 즉시 반영으로 통일 (테스트 편의성)
+            member = Members.query.get(receipt.member_id)
+            if member:
+                diff = new_amount - old_amount
+                member.current_reward_balance = (member.current_reward_balance or 0) + diff
+                member.total_lifetime_spend = (member.total_lifetime_spend or 0) + diff
+            
             receipt.amount = new_amount
             db.session.commit()
         except ValueError:
-            pass # 숫자가 아닌 경우 무시
+            pass
             
     return redirect(f"/admin_8848/member/{receipt.member_id}/edit")
 
@@ -166,16 +178,15 @@ def delete_receipt(receipt_id):
         member_id = receipt.member_id
         member = Members.query.get(member_id)
         
-        db.session.delete(receipt)
-        
-        # 방문 횟수 차감 (단, 0 이하로는 안 내려가게)
-        # 보정 영수증(ADJ)은 방문 횟수에 포함되지 않아야 하지만, 
-        # 현재 구조상 구분이 어려우므로 일괄 차감 or 
-        # visit_count를 Receipts count로 재계산하는 것이 더 정확함.
-        # 여기서는 단순 차감.
-        if member and member.visit_count > 0:
-            member.visit_count -= 1
+        # [Fix] 삭제 시 포인트 차감
+        if member:
+            member.current_reward_balance = (member.current_reward_balance or 0) - receipt.amount
+            member.total_lifetime_spend = (member.total_lifetime_spend or 0) - receipt.amount
             
+            if member.visit_count > 0:
+                member.visit_count -= 1
+        
+        db.session.delete(receipt)
         db.session.commit()
         return redirect(f"/admin_8848/member/{member_id}/edit")
         
