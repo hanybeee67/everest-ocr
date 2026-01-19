@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="page-wrapper">
+        
+        <div class="brand-logo">MEMBERSHIP JOIN</div>
+
+        <h1 class="welcome-title">회원가입</h1>
+        
+        <p class="welcome-desc">
+            가입 지점: <span class="branch-highlight" style="font-weight: 700;">{{ branch }}</span><br>
+            추가 정보를 입력해 주세요.
+        </p>
+
+        <div class="mobile-card" style="text-align: left;">
+            <form action="/join" method="post">
+                <input type="hidden" name="branch" value="{{ branch }}">
+                <input type="hidden" name="branch_code" value="{{ branch_code }}">
+                <input type="hidden" name="phone" value="{{ phone }}">
+
+                <div class="input-group">
+                    <label class="input-label">이름</label>
+                    <input type="text" name="name" class="styled-input" placeholder="홍길동" required>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">전화번호</label>
+                    <input type="tel" value="{{ phone }}" class="styled-input" readonly>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">생년월일 (선택)</label>
+                    <input type="date" name="birth" class="styled-input">
+                </div>
+
+                <div class="checkbox-container">
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="privacy" name="agree_privacy" value="yes" required>
+                        <label for="privacy">개인정보 수집·이용 동의 (필수)</label>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="marketing" name="agree_marketing" value="yes">
+                        <label for="marketing">마케팅 정보 수신 동의 (선택)</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                    가입 완료 및 혜택받기
+                </button>
+            </form>
+        </div>
+
+        <div class="footer-text">
+            © Everest Restaurant Corp.
+        </div>
+
+    </div>
+
+</body>
+</html>

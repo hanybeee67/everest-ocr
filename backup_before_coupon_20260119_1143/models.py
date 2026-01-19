@@ -61,16 +61,6 @@ class Members(db.Model):
     created_at = db.Column(db.String(30))
     receipts = db.relationship('Receipts', backref='member', lazy=True)
     coupons = db.relationship('Coupons', backref='member', lazy=True)
-    
-    # [신규] 쿠폰 시스템 필드
-    current_reward_balance = db.Column(db.Integer, default=0) # 현재 사용 가능한 적립금
-    total_lifetime_spend = db.Column(db.Integer, default=0)   # 총 누적 사용 금액 (통계용)
-
-class Staffs(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    branch = db.Column(db.String(50), nullable=False)
-    name = db.Column(db.String(50), nullable=False)
-    pin_hash = db.Column(db.String(128), nullable=False) # Bcrypt 해시된 PIN
 
 class Receipts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,11 +70,6 @@ class Receipts(db.Model):
     amount = db.Column(db.Integer)
     visit_date = db.Column(db.DateTime, default=datetime.now)
     is_coupon_used = db.Column(db.Boolean, default=False) 
-    
-    # [신규] 승인 시스템 필드
-    status = db.Column(db.String(20), default='PENDING') # PENDING(대기), APPROVED(승인), REJECTED(거절)
-    amount_claimed = db.Column(db.Integer) # 사용자/OCR이 주장한 금액 (검증 전)
-    image_url = db.Column(db.String(255))  # 영수증 이미지 경로 (S3 또는 로컬) 
 
 class Coupons(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -96,8 +81,3 @@ class Coupons(db.Model):
     is_used = db.Column(db.Boolean, default=False)
     used_at_branch = db.Column(db.String(50))
     used_date = db.Column(db.DateTime)
-    
-    # [신규] 쿠폰 상세 필드
-    status = db.Column(db.String(20), default='AVAILABLE') # AVAILABLE(사용가능), USED(사용완료), EXPIRED(만료)
-    redeemed_by_staff_id = db.Column(db.Integer, db.ForeignKey('staffs.id'), nullable=True)
-    is_substitutable = db.Column(db.Boolean, default=True) # 재료 소진 시 타 메뉴 변경 가능 여부

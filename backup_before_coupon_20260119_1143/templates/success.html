@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가입 완료</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .card {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            background: #fff;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 14px;
+            font-size: 1.8rem;
+        }
+
+        .subtext {
+            font-size: 1rem;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        .btn-full {
+            margin-top: 22px;
+            padding: 14px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="card">
+        <h1>감사합니다!</h1>
+
+        <div class="subtext">
+            {{ name }} 고객님의 가입이 정상적으로 완료되었습니다.<br>
+            이번 방문으로 <strong>{{ coupons }}개</strong>의 쿠폰이 발행되었습니다.<br>
+            자세한 내용은 직원에게 문의해주세요.
+        </div>
+
+        <a href="/" class="btn primary btn-full">처음으로 돌아가기</a>
+    </div>
+
+</div>
+
+</body>
+</html>

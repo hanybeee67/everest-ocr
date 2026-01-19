@@ -1,0 +1,235 @@
+/* static/style.css (가입 화면 체크박스 디자인 추가됨) */
+
+/* ===============================
+   기본 세팅
+================================ */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: #f4f6f9;
+    font-family: "Noto Sans KR", sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* ===============================
+   레이아웃
+================================ */
+.page-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* ===============================
+   모바일 공통 요소
+================================ */
+.brand-logo {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.welcome-title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 900;
+    color: #222;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.branch-highlight {
+    color: #ff7f3f;
+    display: inline-block;
+    position: relative;
+}
+
+.branch-highlight::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 127, 63, 0.2);
+    z-index: -1;
+    border-radius: 4px;
+}
+
+.welcome-desc {
+    text-align: center;
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 30px;
+}
+
+.mobile-card {
+    background: #fff;
+    padding: 30px 25px;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+    margin-bottom: 8px;
+    margin-left: 5px;
+}
+
+.styled-input {
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    background: #f9f9f9;
+    border: 2px solid #eee;
+    border-radius: 16px;
+    outline: none;
+    transition: 0.3s;
+    /* 텍스트 입력은 왼쪽 정렬이 더 편함 */
+    text-align: left; 
+}
+
+.styled-input:focus {
+    border-color: #ff7f3f;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 127, 63, 0.1);
+}
+
+/* 읽기 전용 입력창 (전화번호 등) */
+.styled-input:disabled, .styled-input[readonly] {
+    background-color: #eee;
+    color: #888;
+    border-color: #ddd;
+}
+
+.btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #ff7f3f, #ff6b2b);
+    color: #fff;
+    border: none;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 107, 43, 0.3);
+    transition: 0.2s;
+    margin-top: 10px;
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.footer-text {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 13px;
+    color: #aaa;
+}
+
+/* ===============================
+   ★ [신규] 체크박스 디자인
+================================ */
+.checkbox-container {
+    margin-top: 10px;
+    background: #fdfdfd;
+    padding: 15px;
+    border-radius: 16px;
+    border: 1px solid #eee;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: #555;
+}
+
+.checkbox-row:last-child {
+    margin-bottom: 0;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    accent-color: #ff7f3f; /* 체크 시 오렌지색 */
+    cursor: pointer;
+}
+
+.checkbox-row label {
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* ===============================
+   [Mobile] 업로드 박스 디자인
+================================ */
+.file-upload-wrapper {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: #fafafa;
+    border: 2px dashed #ddd;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.file-upload-wrapper:hover { border-color: #ff7f3f; background: #fff8f5; }
+.upload-icon { font-size: 48px; color: #ccc; margin-bottom: 10px; }
+.upload-text { font-size: 15px; color: #888; font-weight: 500; }
+.file-input-hidden { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.preview-img { position: absolute; width: 100%; height: 100%; object-fit: cover; border-radius: 18px; display: none; }
+
+/* ===============================
+   관리자 페이지 스타일
+================================ */
+.admin-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+.page-title { font-size: 28px; font-weight: 700; color: #111; margin-bottom: 20px; border-left: 5px solid #ff7f3f; padding-left: 15px; }
+.stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+.stat-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); text-align: center; }
+.stat-card h3 { font-size: 14px; color: #888; margin-bottom: 10px; }
+.stat-card .value { font-size: 24px; font-weight: 800; color: #333; }
+.table-wrapper { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 50px; }
+.member-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.member-table th { background-color: #f8f9fa; padding: 16px; font-size: 15px; text-align: center; border-bottom: 2px solid #eee; }
+.member-table td { padding: 16px 12px; border-bottom: 1px solid #f1f1f1; font-size: 14px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.member-table tr:hover { background-color: #fff8f0; }
+.toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; }
+.print-btn, .small-btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; background: #555; color: #fff; }
+.small-btn { background: #ff7f3f; }

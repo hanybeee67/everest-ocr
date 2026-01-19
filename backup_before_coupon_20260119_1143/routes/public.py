@@ -154,8 +154,9 @@ def receipt_process():
                                  message="영수증에서 '에베레스트' 글자를 찾을 수 없습니다.<br>올바른 영수증인지 확인해주세요.", 
                                  success=False)
         
-        # [삭제 로직 변경] 조건부 자동 승인 로직에서 처리하므로 여기서는 삭제하지 않음
-        pass
+        # [삭제] OCR 처리 후 이미지 파일 즉시 삭제
+        if image_path and os.path.exists(image_path):
+            os.remove(image_path)
         
     except Exception as e:
         if image_path and os.path.exists(image_path):
@@ -207,48 +208,22 @@ def receipt_process():
             member.visit_count = current_count + 1
             member.last_visit = today
     
-    # [수정] 조건부 자동 승인 로직 (15만원 기준)
-    THRESHOLD_AUTO_APPROVE = 150000
-    status = 'PENDING'
-    save_message = ""
-    
-    if amount < THRESHOLD_AUTO_APPROVE:
-        status = 'APPROVED'
-        # 자동 승인: 포인트 즉시 적립
-        member.current_reward_balance = (member.current_reward_balance or 0) + amount
-        member.total_lifetime_spend = (member.total_lifetime_spend or 0) + amount
-        save_message = "적립이 완료되었습니다. (자동 승인)"
-        
-        # 자동 승인된 건은 이미지 삭제 (용량 절약)
-        if image_path and os.path.exists(image_path):
-            try: os.remove(image_path)
-            except: pass
-        image_url = None
-        
-    else:
-        status = 'PENDING'
-        # 고액 건: 관리자 승인 대기 (포인트 적립 보류)
-        save_message = "15만원 이상 고액 결제는 관리자 승인 후 적립됩니다."
-        
-        # 승인 대기 건은 이미지 보존 (관리자 확인용)
-        # 이미지 경로는 웹에서 접근 가능하도록 상대 경로로 저장하거나 별도 처리 필요
-        # 현재는 instance 폴더에 있으므로, static 등으로 옮기거나, 일단 파일명 기록
-        image_url = image_filename 
-    
-    db.session.add(new_receipt)
-    new_receipt.status = status
-    new_receipt.amount_claimed = amount
-    new_receipt.image_url = image_url
-    
     db.session.commit()
     
-    total_spent = member.total_lifetime_spend or 0
+    # ★ 쿠폰 발급 (리스트 반환 지원)
+    issued_coupons_list = issue_coupon_if_qualified(db, Receipts, Coupons, member.id)
+    if issued_coupons_list:
+        coupon_message = ", ".join(issued_coupons_list)
+    else:
+        coupon_message = None
+
+    total_spent = db.session.query(func.sum(Receipts.amount)).filter_by(member_id=member.id).scalar() or 0
 
     return render_template("result.html", 
                            success=True,
-                           title="처리 완료",
+                           title="적립 완료",
                            member_name=member.name,
                            visit_count=member.visit_count,
                            current_amount=amount,
                            total_amount=total_spent,
-                           coupon_issued=save_message)
+                           coupon_issued=coupon_message)

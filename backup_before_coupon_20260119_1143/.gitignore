@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+instance/
+*.db
+*.pyc
+.DS_Store
+# 구글 키 파일은 절대 올리면 안 됩니다! (파일명을 정확히 적거나 *.json으로 막기)
+*.json
+encryption_key.txt

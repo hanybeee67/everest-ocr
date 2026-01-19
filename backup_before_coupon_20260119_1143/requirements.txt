@@ -1,0 +1,13 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+gunicorn
+qrcode[pil]
+google-cloud-vision
+cryptography
+bcrypt
+Flask-Migrate
+alembic
+Flask-Limiter
+python-docx
+psycopg2-binary

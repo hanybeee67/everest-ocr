@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Everest 멤버십</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .card {
+            padding: 24px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            margin-top: 40px;
+            text-align: center;
+        }
+        .btn-full {
+            margin-top: 14px;
+            padding: 14px 0;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="header">
+        <h1>Everest 멤버십</h1>
+        <div class="sub">원하시는 서비스를 선택해주세요</div>
+    </div>
+
+    <div class="card">
+
+        <a href="/register?branch=동대문" class="btn primary btn-full">
+            신규가입
+        </a>
+
+        <a href="/visit?branch=동대문" class="btn secondary btn-full">
+            재방문 적립
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>

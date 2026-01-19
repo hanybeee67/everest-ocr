@@ -31,12 +31,6 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
     
-    from routes.reward import reward_bp
-    app.register_blueprint(reward_bp)
-    
-    from routes.staff import staff_bp
-    app.register_blueprint(staff_bp)
-    
     # DB 테이블 생성 (앱 컨텍스트 내에서 실행)
     with app.app_context():
         db.create_all()

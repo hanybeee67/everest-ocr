@@ -1,0 +1,53 @@
+<!-- templates/coupons.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Everest 쿠폰 목록</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="page admin-page">
+    <header class="header">
+        <h1>쿠폰 발행 내역</h1>
+        <p class="sub">첫 방문 라시, 방문 3회, 금액 10만 원 단위 쿠폰을 확인할 수 있습니다.</p>
+        <div class="admin-nav">
+            <a class="btn secondary btn-small" href="{{ url_for('admin_members') }}">멤버 목록</a>
+            <a class="btn secondary btn-small" href="/">홈으로</a>
+        </div>
+    </header>
+
+    <main class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>회원명</th>
+                    <th>전화번호</th>
+                    <th>쿠폰 종류</th>
+                    <th>설명</th>
+                    <th>발행일</th>
+                    <th>사용여부</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for c in coupons %}
+                    <tr>
+                        <td>{{ c.member.name }}</td>
+                        <td>{{ c.member.phone }}</td>
+                        <td>{{ c.type }}</td>
+                        <td>{{ c.description }}</td>
+                        <td>{{ c.issued_at.strftime("%Y-%m-%d") if c.issued_at else "" }}</td>
+                        <td>{{ "사용" if c.used else "미사용" }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>

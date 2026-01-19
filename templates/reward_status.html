@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에베레스트 리워드</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .balance-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .balance-amount {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .tier-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tier-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .tier-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .tier-info h3 {
+            margin: 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .tier-cost {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .btn-claim {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background-color: #e0e0e0;
+            color: #aaa;
+            cursor: not-allowed;
+            font-weight: bold;
+        }
+
+        .btn-claim.active {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+        }
+
+        .coupon-list {
+            margin-top: 40px;
+        }
+
+        .coupon-card {
+            background: #fff;
+            border: 2px dashed #ddd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .coupon-code {
+            font-family: monospace;
+            font-size: 1.2em;
+            color: #d63384;
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            background-color: #28a745;
+            color: white;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="balance-card">
+            <div>{{ member.name }}님의 포인트</div>
+            <div class="balance-amount">{{ "{:,}".format(member.current_reward_balance or 0) }} P</div>
+            <div>누적 사용액: {{ "{:,}".format(member.total_lifetime_spend or 0) }}원</div>
+        </div>
+
+        <h3>🎁 리워드 교환</h3>
+        <div class="tier-list">
+            {% for level, info in tiers.items() %}
+            <div class="tier-card">
+                <div class="tier-info">
+                    <h3>{{ info.name }}</h3>
+                    <div class="tier-cost">{{ "{:,}".format(info.cost) }} P 필요</div>
+                </div>
+                <button class="btn-claim {% if (member.current_reward_balance or 0) >= info.cost %}active{% endif %}"
+                    onclick="claimReward({{ level }}, '{{ info.name }}', {{ info.cost }})" {% if
+                    (member.current_reward_balance or 0) < info.cost %}disabled{% endif %}>
+                    교환하기
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if available_coupons %}
+        <div class="coupon-list">
+            <h3>🎫 보유 쿠폰</h3>
+            {% for coupon in available_coupons %}
+            <div class="coupon-card">
+                <div>{{ coupon.coupon_type }}</div>
+                <div class="coupon-code">{{ coupon.coupon_code }}</div>
+                <div style="font-size: 0.9em; color: #666;">
+                    유효기간: ~{{ coupon.expiry_date.strftime('%Y-%m-%d') }}
+                    <span class="badge">사용가능</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function claimReward(level, name, cost) {
+            if (!confirm(name + " 쿠폰으로 교환하시겠습니까?\n" + cost.toLocaleString() + " 포인트가 차감됩니다.")) {
+                return;
+            }
+
+            $.post("/reward/claim", {
+                member_id: "{{ member.id }}",
+                tier_level: level
+            }, function (response) {
+                alert(response.message);
+                location.reload();
+            }).fail(function (xhr) {
+                alert("오류: " + xhr.responseJSON.message);
+            });
+        }
+    </script>
+</body>
+
+</html>

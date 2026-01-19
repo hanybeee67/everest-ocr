@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>에베레스트 멤버십</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="page-wrapper">
+        
+        <div class="brand-logo">EVEREST RESTAURANT</div>
+
+        <h1 class="welcome-title">
+            Welcome to<br>
+            <span class="branch-highlight">{{ branch_name }}</span>
+        </h1>
+        
+        <p class="welcome-desc">
+            휴대폰 번호 하나로<br>
+            간편하게 적립하고 혜택을 받으세요.
+        </p>
+
+        <div class="mobile-card">
+            <form action="/check" method="post">
+                <input type="hidden" name="branch_code" value="{{ branch_code }}">
+                
+                <div class="input-group">
+                    <label class="input-label">휴대폰 번호</label>
+                    <input type="tel" 
+                           name="phone" 
+                           class="styled-input" 
+                           placeholder="01012345678" 
+                           required 
+                           autocomplete="off"
+                           inputmode="numeric" 
+                           pattern="[0-9]*">
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    시작하기
+                </button>
+            </form>
+        </div>
+
+        <div class="footer-text">
+            © Everest Restaurant Corp.<br>
+            Membership System
+        </div>
+
+    </div>
+
+</body>
+</html>

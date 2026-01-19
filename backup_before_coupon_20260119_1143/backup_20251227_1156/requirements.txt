@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+gunicorn
+qrcode[pil]
+google-cloud-vision
+cryptography
