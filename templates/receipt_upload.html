@@ -7,6 +7,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* [Mobile Fix] Label이 전체 영역을 덮도록 설정하여 클릭 반응성 극대화 */
+        .file-upload-wrapper {
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* 숨겨진 input을 label 영역 전체로 확장하지만 투명하게 만듦 (호환성 최후의 보루) */
+        .file-input-hidden {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
 </head>
 
 <body>
@@ -26,32 +45,41 @@
             <span style="display:inline-block; margin-top:5px; font-weight:bold; color:#2c3e50;">
                 현재까지 총 <span style="color:#e67e22; font-size:1.2em;">{{ visit_count }}</span>회 방문하셨습니다.
             </span><br>
-            영수증 사진을 찍어 올려주세요.
+            영수증 사진을 찍으면 <strong>자동으로 등록</strong>됩니다.
         </p>
 
         <div class="mobile-card">
-            <form action="/receipt/process" method="post" enctype="multipart/form-data">
+            <form id="uploadForm" action="/receipt/process" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="member_id" value="{{ member_id }}">
 
                 <div class="input-group">
                     <label class="input-label" style="text-align: center; margin-bottom: 15px;">영수증 사진 촬영</label>
 
-                    <div class="file-upload-wrapper" id="uploadBox">
+                    <!-- [Fix] div가 아니라 label 태그 사용 (표준 웹 접근성 준수) -->
+                    <!-- [Restore] capture="environment" 복구 (카메라 바로 실행) -->
+                    <label class="file-upload-wrapper" id="uploadBox">
                         <i class="fa-solid fa-camera upload-icon"></i>
                         <span class="upload-text" id="uploadText">
-                            터치하여 <em>사진 촬영</em><br>또는 앨범 선택
+                            터치하여 <strong>사진 찍기</strong>
                         </span>
 
+                        <!-- input을 라벨 내부에 위치시킴 -->
                         <input type="file" name="receipt_image" id="fileInput" class="file-input-hidden"
-                            accept="image/*" required>
+                            accept="image/*" capture="environment" required>
 
                         <img id="previewImg" class="preview-img" src="" alt="미리보기">
-                    </div>
+                    </label>
                 </div>
 
-                <button type="submit" class="btn-primary">
-                    영수증 등록 및 혜택받기
+                <button type="submit" class="btn-primary" id="submitBtn" style="display: none;">
+                    영수증 등록하기
                 </button>
+
+                <div id="loadingMsg"
+                    style="display:none; text-align:center; color:#e67e22; font-weight:bold; margin-top:15px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:24px;"></i><br><br>
+                    영수증을 분석하고 있습니다...<br>잠시만 기다려주세요!
+                </div>
             </form>
 
             <p style="font-size: 13px; color: #aaa; margin-top: 20px; line-height: 1.5;">
@@ -102,24 +130,31 @@
         const uploadBox = document.getElementById('uploadBox');
         const uploadText = document.getElementById('uploadText');
         const icon = document.querySelector('.upload-icon');
-
-        // [iOS/Mobile Fix] div 클릭 시 hidden input 트리거
-        uploadBox.addEventListener('click', function () {
-            fileInput.click();
-        });
+        const uploadForm = document.getElementById('uploadForm');
+        const loadingMsg = document.getElementById('loadingMsg');
+        const submitBtn = document.getElementById('submitBtn');
 
         fileInput.addEventListener('change', function (event) {
             const file = event.target.files[0];
             if (file) {
+                // 1. 미리보기 표시
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     previewImg.src = e.target.result;
-                    previewImg.style.display = 'block'; // 이미지 보이기
+                    previewImg.style.display = 'block';
+                    uploadText.style.display = 'none';
+                    icon.style.display = 'none';
+                    uploadBox.style.borderStyle = 'solid';
 
-                    // 텍스트와 아이콘 숨기기
-                    uploadText.style.opacity = '0';
-                    icon.style.opacity = '0';
-                    uploadBox.style.borderStyle = 'solid'; // 테두리 실선으로 변경
+                    // 2. [UX Restore] 사진 찍자마자 "자동 제출" 처리
+                    // 사용자가 버튼을 누를 필요 없이 바로 분석 시작
+                    loadingMsg.style.display = 'block';
+                    uploadBox.style.opacity = '0.5'; // 중복 클릭 방지 효과
+                    uploadBox.style.pointerEvents = 'none';
+
+                    setTimeout(() => {
+                        uploadForm.submit();
+                    }, 500); // 미리보기가 살짝 보일 시간(0.5초) 주고 제출
                 }
                 reader.readAsDataURL(file);
             }
