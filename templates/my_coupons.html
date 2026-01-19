@@ -12,64 +12,86 @@
             border: 1px solid #eee;
             border-radius: 12px;
             padding: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             background: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            /* 그림자 강화 */
             position: relative;
             overflow: hidden;
         }
 
         .coupon-card.active {
-            border-left: 5px solid #e67e22;
+            border: 1px solid #e67e22;
+            /* 테두리 컬러 */
+            background: #fffcf5;
+            /* 살짝 노란 배경 */
         }
 
         .coupon-card.inactive {
             background: #f9f9f9;
-            color: #999;
-            border-left: 5px solid #ccc;
+            color: #ccc;
+            border: none;
+            opacity: 0.7;
+        }
+
+        .coupon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .coupon-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #2c3e50;
         }
 
         .coupon-date {
             font-size: 13px;
             color: #666;
+            margin-bottom: 5px;
         }
 
         .coupon-code {
-            font-family: monospace;
-            background: #f0f0f0;
+            font-family: 'Courier New', monospace;
+            background: #eee;
             padding: 2px 6px;
             border-radius: 4px;
             font-weight: bold;
+            color: #333;
         }
 
+        /* 버튼 스타일 강화 */
         .btn-use {
             display: block;
             width: 100%;
             text-align: center;
-            background: #e67e22;
+            background: #ff7f3f;
+            /* 브랜드 컬러 */
             color: white;
-            padding: 10px 0;
+            padding: 12px 0;
             border-radius: 8px;
-            margin-top: 10px;
+            margin-top: 15px;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 16px;
+            box-shadow: 0 2px 5px rgba(255, 127, 63, 0.4);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-use:active {
+            transform: scale(0.98);
         }
 
         .badge {
             display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
             color: white;
-            position: absolute;
-            top: 15px;
-            right: 15px;
+            font-weight: bold;
         }
 
         .bg-green {
@@ -84,10 +106,40 @@
             background-color: #e74c3c;
         }
 
-        .empty-state {
+        /* Modal Style */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-card {
+            background: white;
+            width: 90%;
+            max-width: 350px;
+            padding: 25px;
+            border-radius: 16px;
             text-align: center;
-            padding: 40px 20px;
-            color: #999;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .pin-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 15px 0;
         }
     </style>
 </head>
@@ -97,7 +149,7 @@
         <div class="brand-logo">EVEREST COUPONS</div>
 
         <div style="margin-bottom: 20px;">
-            <h2 style="font-size: 18px; color: #333;">
+            <h2 style="font-size: 20px; color: #333; font-weight:700;">
                 <span style="color: #ff7f3f;">{{ member.name }}</span>님의 쿠폰함
             </h2>
         </div>
@@ -105,70 +157,148 @@
         <!-- 사용 가능 쿠폰 -->
         <h3
             style="font-size: 15px; color: #555; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px;">
-            사용 가능 쿠폰 <span style="color: #e67e22;">{{ active_coupons|length }}</span>
+            사용 가능 <span style="color: #e67e22; font-weight:bold;">{{ active_coupons|length }}</span>
         </h3>
 
         {% if active_coupons %}
         {% for coupon in active_coupons %}
         <div class="coupon-card active">
-            <span class="badge bg-green">사용가능</span>
+            <div class="coupon-header">
+                <span class="badge bg-green">AVAILABLE</span>
+            </div>
+
             <div class="coupon-title">{{ coupon.coupon_type }}</div>
-            <div class="coupon-date">
-                만료일: {{ coupon.expiry_date.strftime('%Y-%m-%d') }}<br>
-                코드: <span class="coupon-code">{{ coupon.coupon_code }}</span>
+
+            <div style="margin-top: 10px; color: #666; font-size: 14px;">
+                <div>유효기간: <strong>~ {{ coupon.expiry_date.strftime('%Y-%m-%d') }}</strong></div>
+                <div style="font-size:12px; margin-top:3px; color:#aaa;">Serial: {{ coupon.coupon_code }}</div>
             </div>
-            <!-- 직원 확인용 모달이나 QR코드로 확장 가능, 지금은 단순히 보여주기 -->
-            <div
-                style="background:#fff3cd; padding:8px; margin-top:10px; font-size:12px; border-radius:4px; color:#856404;">
-                <i class="fa-solid fa-store"></i> 사용 시 직원에게 이 화면을 보여주세요.
-            </div>
+
+            <button class="btn-use" onclick="openRedeemModal('{{ coupon.coupon_code }}', '{{ coupon.coupon_type }}')">
+                <i class="fa-solid fa-utensils"></i> 직원에게 보여주기 (사용하기)
+            </button>
         </div>
         {% endfor %}
         {% else %}
-        <div class="empty-state">
-            <i class="fa-regular fa-face-sad-tear" style="font-size: 30px; margin-bottom: 10px;"></i><br>
-            사용 가능한 쿠폰이 없습니다.
+        <div style="text-align: center; padding: 50px 20px; color: #aaa;">
+            <i class="fa-regular fa-face-sad-tear" style="font-size: 40px; margin-bottom: 15px;"></i><br>
+            현재 사용 가능한 쿠폰이 없습니다.<br>
+            <span style="font-size:12px;">(적립을 통해 쿠폰을 획득해보세요!)</span>
         </div>
         {% endif %}
 
         <!-- 지난 쿠폰 -->
+        {% if inactive_coupons %}
         <h3
-            style="font-size: 15px; color: #999; margin-top: 30px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
-            지난 쿠폰 내역
+            style="font-size: 14px; color: #bbb; margin-top: 40px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+            사용 완료 / 만료된 쿠폰
         </h3>
 
-        {% if inactive_coupons %}
         {% for coupon in inactive_coupons %}
         <div class="coupon-card inactive">
-            {% if coupon.status == 'USED' %}
-            <span class="badge bg-grey">사용완료</span>
-            {% else %}
-            <span class="badge bg-red">기간만료</span>
-            {% endif %}
-
-            <div class="coupon-title">{{ coupon.coupon_type }}</div>
-            <div class="coupon-date">
+            <div class="coupon-title" style="color:#aaa;">{{ coupon.coupon_type }}</div>
+            <div class="coupon-date" style="color:#bbb;">
                 {% if coupon.status == 'USED' %}
-                사용일: {{ coupon.used_date.strftime('%Y-%m-%d') if coupon.used_date else '-' }}
+                <span class="badge bg-grey">사용완료</span> {{ coupon.used_date.strftime('%Y.%m.%d') }}
                 {% else %}
-                만료일: {{ coupon.expiry_date.strftime('%Y-%m-%d') }}
+                <span class="badge bg-red">기간만료</span> {{ coupon.expiry_date.strftime('%Y.%m.%d') }}
                 {% endif %}
             </div>
         </div>
         {% endfor %}
-        {% else %}
-        <div class="empty-state" style="padding: 20px;">
-            지난 내역이 없습니다.
-        </div>
         {% endif %}
 
         <div class="footer-text" style="margin-top: 30px;">
-            <a href="/"
-                style="text-decoration: none; color: #333; font-weight: bold; border: 1px solid #ddd; padding: 8px 20px; border-radius: 20px; background: white;">
-                <i class="fa-solid fa-home"></i> 홈으로 가기
+            <a href="/" style="text-decoration: none; color: #888; border-bottom: 1px solid #ccc;">
+                홈으로 돌아가기
             </a>
         </div>
     </div>
+
+    <!-- Redemption Modal -->
+    <div id="redeemModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-top:0; color:#2c3e50;">직원 확인</h3>
+            <p style="font-size:14px; color:#666; margin-bottom:20px;">
+                <strong id="modalCouponName" style="color:#e67e22;"></strong><br>
+                쿠폰을 사용하시겠습니까?
+            </p>
+
+            <form id="redeemForm" onsubmit="submitRedeem(event)">
+                <input type="hidden" id="modalCouponCode" name="coupon_code">
+
+                <div style="text-align:left; font-size:13px; margin-bottom:5px; color:#555;">현재 지점</div>
+                <select id="modalBranch" name="branch" class="styled-input" style="padding:10px; margin-bottom:15px;">
+                    {% for branch in branch_list %}
+                    <option value="{{ branch }}">{{ branch }}</option>
+                    {% endfor %}
+                </select>
+
+                <div style="text-align:left; font-size:13px; margin-bottom:5px; color:#555;">직원 PIN 번호</div>
+                <input type="password" id="modalPin" class="pin-input" placeholder="****" maxlength="4"
+                    inputmode="numeric" required>
+
+                <button type="submit" class="btn-primary" style="margin-top:10px;">사용 승인</button>
+                <button type="button" class="btn-primary" style="background:#aaa; margin-top:10px;"
+                    onclick="closeRedeemModal()">취소</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('redeemModal');
+        const modalCouponName = document.getElementById('modalCouponName');
+        const modalCouponCode = document.getElementById('modalCouponCode');
+        const modalPin = document.getElementById('modalPin');
+
+        function openRedeemModal(code, name) {
+            modalCouponCode.value = code;
+            modalCouponName.innerText = name;
+            modalPin.value = '';
+            modal.style.display = 'flex';
+        }
+
+        function closeRedeemModal() {
+            modal.style.display = 'none';
+        }
+
+        async function submitRedeem(e) {
+            e.preventDefault();
+
+            const pin = modalPin.value;
+            const code = modalCouponCode.value;
+            const branch = document.getElementById('modalBranch').value;
+
+            if (!pin || pin.length < 4) {
+                alert("직원 PIN 번호를 4자리 입력해주세요.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/reward/redeem-mobile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        coupon_code: code,
+                        staff_pin: pin,
+                        branch_name: branch
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('성공적으로 사용되었습니다! 🎁');
+                    location.reload(); // 새로고침하여 목록 갱신
+                } else {
+                    alert('실패: ' + result.message);
+                }
+            } catch (err) {
+                alert('통신 오류가 발생했습니다.');
+                console.error(err);
+            }
+        }
+    </script>
 </body>
 
 </html>

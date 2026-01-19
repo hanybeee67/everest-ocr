@@ -41,7 +41,21 @@ def claim():
 @reward_bp.route("/my-coupons")
 def my_coupons():
     member_id = request.args.get("member_id")
+    token = request.args.get("token")
     
+    # [Magic Link] 토큰이 있으면 검증하여 자동 로그인 처리
+    if token:
+        try:
+            from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+            s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+            # salt는 생성시와 동일하게 'coupon-access'
+            # max_age는 예: 30일(2592000초) 등으로 설정 가능
+            decoded_id = s.loads(token, salt='coupon-access', max_age=2592000)
+            member_id = decoded_id
+        except (SignatureExpired, BadSignature):
+            # 토큰 만료나 위변조 시 -> 로그인 페이지로 Fallback
+            pass
+
     # 1. 로그인(전화번호 입력) 안된 상태면 입력 페이지 렌더링
     if not member_id:
         return render_template("my_coupons_login.html")
@@ -59,7 +73,52 @@ def my_coupons():
         Coupons.status.in_(['USED', 'EXPIRED'])
     ).order_by(Coupons.used_date.desc(), Coupons.expiry_date.desc()).all()
     
-    return render_template("my_coupons.html", member=member, active_coupons=active_coupons, inactive_coupons=inactive_coupons)
+    # 지점 목록 (모달에서 사용)
+    from services.ocr_parser import BRANCH_NAMES
+    # BRANCH_NAMES 키들(동대문, 굿모닝시티 등)을 리스트로 전달
+    branch_list = list(BRANCH_NAMES.keys())
+    
+    return render_template("my_coupons.html", member=member, active_coupons=active_coupons, inactive_coupons=inactive_coupons, branch_list=branch_list)
+
+@reward_bp.route("/redeem-mobile", methods=["POST"])
+def redeem_mobile():
+    """
+    모바일 웹에서 직원이 PIN을 입력하여 쿠폰을 즉시 사용하는 API
+    """
+    coupon_code = request.json.get("coupon_code")
+    staff_pin = request.json.get("staff_pin")
+    branch_name = request.json.get("branch_name") # '동대문', '영등포' 등 한글 이름
+    
+    if not all([coupon_code, staff_pin, branch_name]):
+        return jsonify({"success": False, "message": "필수 정보가 누락되었습니다."}), 400
+        
+    # branch_name(한글) -> branch_code(영문) 매핑 필요
+    # models.py나 config에 매핑이 있어야 정확하지만, 
+    # 현재 ocr_parser의 BRANCH_NAMES 구조상 역매핑이 필요하거나, 
+    # staff 테이블의 branch 필드값(영문/코드)과 맞춰야 함.
+    # [임시 조치] 현재 Staff 테이블의 branch 컬럼이 영문('dongdaemun')인지 한글('동대문')인지 확인 필요.
+    # 보통 코드('dongdaemun')를 쓰므로 매핑 로직 추가.
+    
+    # 간단 매핑 (하드코딩 or config 참조 권장)
+    branch_map = {
+        "동대문": "dongdaemun",
+        "굿모닝시티": "goodmorning",
+        "영등포": "yeongdeungpo",
+        "양재": "yangjae",
+        "수원 영통": "suwon",
+        "동탄": "dongtan",
+        "룸비니": "lumbini"
+    }
+    
+    branch_code = branch_map.get(branch_name, "dongdaemun") # 기본값 동대문
+    
+    from services.coupon_service import redeem_coupon_service
+    result = redeem_coupon_service(coupon_code, staff_pin, branch_code)
+    
+    if result["success"]:
+        return jsonify(result)
+    else:
+        return jsonify(result), 400
 
 @reward_bp.route("/my-coupons/auth", methods=["POST"])
 def my_coupons_auth():
