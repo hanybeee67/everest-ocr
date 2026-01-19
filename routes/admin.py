@@ -29,20 +29,24 @@ def admin_logout():
 
 @admin_bp.route("/members")
 def admin_members():
-    if not session.get('admin_logged_in'):
-        return redirect("/admin_8848/login")
+    try:
+        if not session.get('admin_logged_in'):
+            return redirect("/admin_8848/login")
 
-    sort = request.args.get("sort", "date")
-    if sort == "name": members = Members.query.order_by(Members._name.asc()).all()
-    elif sort == "branch": members = Members.query.order_by(Members.branch.asc()).all()
-    elif sort == "visit": members = Members.query.order_by(Members.visit_count.desc()).all()
-    else: members = Members.query.order_by(Members.id.desc()).all()
-    
-    all_receipts = Receipts.query.order_by(Receipts.visit_date.desc()).all()
-    total_members = Members.query.count()
-    total_visits = db.session.query(func.sum(Members.visit_count)).scalar() or 0
-    
-    return render_template("members.html", members=members, sort=sort, total_members=total_members, total_visits=total_visits, all_receipts=all_receipts)
+        sort = request.args.get("sort", "date")
+        if sort == "name": members = Members.query.order_by(Members._name.asc()).all()
+        elif sort == "branch": members = Members.query.order_by(Members.branch.asc()).all()
+        elif sort == "visit": members = Members.query.order_by(Members.visit_count.desc()).all()
+        else: members = Members.query.order_by(Members.id.desc()).all()
+        
+        all_receipts = Receipts.query.order_by(Receipts.visit_date.desc()).all()
+        total_members = Members.query.count()
+        total_visits = db.session.query(func.sum(Members.visit_count)).scalar() or 0
+        
+        return render_template("members.html", members=members, sort=sort, total_members=total_members, total_visits=total_visits, all_receipts=all_receipts)
+    except Exception as e:
+        import traceback
+        return f"<h3>Error Occurred:</h3><pre>{traceback.format_exc()}</pre>"
 
 @admin_bp.route("/delete_member/<int:id>")
 def delete_member(id):
