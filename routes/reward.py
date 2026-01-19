@@ -21,7 +21,6 @@ def status():
         member = Members.query.filter_by(phone_hash_value=input_hash).first()
         
         if not member:
-        if not member:
             # Fallback (전체 검색) - 테스트 편의성을 위해
             all_members = Members.query.all()
             # 숫자만 추출하여 정규화
