@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>쿠폰함 로그인</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <div class="brand-logo">EVEREST MEMBERSHIP</div>
+
+        <h1 class="welcome-title" style="margin-top: 50px;">
+            내 쿠폰함 확인
+        </h1>
+
+        <p class="welcome-desc">
+            가입하신 휴대전화 번호를 입력해주세요.
+        </p>
+
+        <div class="mobile-card">
+            {% if error %}
+            <div
+                style="background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-size: 14px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/reward/my-coupons/auth" method="post">
+                <div class="input-group">
+                    <label class="input-label">휴대폰 번호</label>
+                    <input type="tel" name="phone" class="styled-input" placeholder="01012345678"
+                        value="{{ phone|default('010') }}" required pattern="[0-9]*" inputmode="numeric">
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    쿠폰함 보기
+                </button>
+            </form>
+        </div>
+
+        <div class="footer-text">
+            © Everest Restaurant Corp.
+        </div>
+    </div>
+</body>
+
+</html>

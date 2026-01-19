@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>내 쿠폰함</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .coupon-card {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .coupon-card.active {
+            border-left: 5px solid #e67e22;
+        }
+
+        .coupon-card.inactive {
+            background: #f9f9f9;
+            color: #999;
+            border-left: 5px solid #ccc;
+        }
+
+        .coupon-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .coupon-date {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .coupon-code {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .btn-use {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background: #e67e22;
+            color: white;
+            padding: 10px 0;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: white;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+
+        .bg-green {
+            background-color: #27ae60;
+        }
+
+        .bg-grey {
+            background-color: #95a5a6;
+        }
+
+        .bg-red {
+            background-color: #e74c3c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <div class="brand-logo">EVEREST COUPONS</div>
+
+        <div style="margin-bottom: 20px;">
+            <h2 style="font-size: 18px; color: #333;">
+                <span style="color: #ff7f3f;">{{ member.name }}</span>님의 쿠폰함
+            </h2>
+        </div>
+
+        <!-- 사용 가능 쿠폰 -->
+        <h3
+            style="font-size: 15px; color: #555; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px;">
+            사용 가능 쿠폰 <span style="color: #e67e22;">{{ active_coupons|length }}</span>
+        </h3>
+
+        {% if active_coupons %}
+        {% for coupon in active_coupons %}
+        <div class="coupon-card active">
+            <span class="badge bg-green">사용가능</span>
+            <div class="coupon-title">{{ coupon.coupon_type }}</div>
+            <div class="coupon-date">
+                만료일: {{ coupon.expiry_date.strftime('%Y-%m-%d') }}<br>
+                코드: <span class="coupon-code">{{ coupon.coupon_code }}</span>
+            </div>
+            <!-- 직원 확인용 모달이나 QR코드로 확장 가능, 지금은 단순히 보여주기 -->
+            <div
+                style="background:#fff3cd; padding:8px; margin-top:10px; font-size:12px; border-radius:4px; color:#856404;">
+                <i class="fa-solid fa-store"></i> 사용 시 직원에게 이 화면을 보여주세요.
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fa-regular fa-face-sad-tear" style="font-size: 30px; margin-bottom: 10px;"></i><br>
+            사용 가능한 쿠폰이 없습니다.
+        </div>
+        {% endif %}
+
+        <!-- 지난 쿠폰 -->
+        <h3
+            style="font-size: 15px; color: #999; margin-top: 30px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+            지난 쿠폰 내역
+        </h3>
+
+        {% if inactive_coupons %}
+        {% for coupon in inactive_coupons %}
+        <div class="coupon-card inactive">
+            {% if coupon.status == 'USED' %}
+            <span class="badge bg-grey">사용완료</span>
+            {% else %}
+            <span class="badge bg-red">기간만료</span>
+            {% endif %}
+
+            <div class="coupon-title">{{ coupon.coupon_type }}</div>
+            <div class="coupon-date">
+                {% if coupon.status == 'USED' %}
+                사용일: {{ coupon.used_date.strftime('%Y-%m-%d') if coupon.used_date else '-' }}
+                {% else %}
+                만료일: {{ coupon.expiry_date.strftime('%Y-%m-%d') }}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state" style="padding: 20px;">
+            지난 내역이 없습니다.
+        </div>
+        {% endif %}
+
+        <div class="footer-text" style="margin-top: 30px;">
+            <a href="/"
+                style="text-decoration: none; color: #333; font-weight: bold; border: 1px solid #ddd; padding: 8px 20px; border-radius: 20px; background: white;">
+                <i class="fa-solid fa-home"></i> 홈으로 가기
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>

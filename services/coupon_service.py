@@ -51,6 +51,12 @@ def claim_reward_service(user_id, tier_level):
     
     try:
         db.session.commit()
+        
+        # [Notification] 쿠폰 발급 알림 발송
+        from services.notification_service import send_notification
+        msg = f"[에베레스트] {tier_info['name']} 쿠폰이 발급되었습니다.\n확인하기: https://everest-membership.com/my-coupons"
+        send_notification(member.phone, msg)
+        
         return {
             "success": True, 
             "message": f"{tier_info['name']} 쿠폰이 발급되었습니다!",
