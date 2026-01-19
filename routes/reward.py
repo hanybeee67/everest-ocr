@@ -7,16 +7,30 @@ reward_bp = Blueprint('reward', __name__, url_prefix='/reward')
 
 @reward_bp.route("/status")
 def status():
-    # 간단한 인증: member_id를 세션이나 파라미터로 받아야 함. 
-    # 현재 구조상 URL 파라미터나 세션 없이 접근 어려움.
-    # 영수증 업로드 후나, 전화번호 조회 후 접근한다고 가정.
+    # 간단한 인증: member_id 또는 phone으로 접근 허용
     member_id = request.args.get("member_id")
-    if not member_id:
-        return redirect("/")
+    phone = request.args.get("phone")
+    
+    member = None
+    
+    if member_id:
+        member = Members.query.get(member_id)
+    elif phone:
+        # 전화번호로 조회 (해시 -> Fallback)
+        input_hash = Members.generate_phone_hash(phone)
+        member = Members.query.filter_by(phone_hash_value=input_hash).first()
         
-    member = Members.query.get(member_id)
+        if not member:
+            # Fallback (전체 검색) - 테스트 편의성을 위해
+            all_members = Members.query.all()
+            norm_input = phone.replace("-", "").replace(" ", "").strip()
+            for m in all_members:
+                 if m.phone and m.phone.replace("-", "").replace(" ", "").strip() == norm_input:
+                     member = m
+                     break
+                     
     if not member:
-        return "Member not found", 404
+        return "회원 정보를 찾을 수 없습니다. (올바른 ID 또는 전화번호를 입력해주세요)", 404
         
     # 사용 가능 쿠폰 조회
     available_coupons = Coupons.query.filter_by(member_id=member.id, status='AVAILABLE').all()
