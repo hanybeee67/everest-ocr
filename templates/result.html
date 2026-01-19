@@ -47,7 +47,7 @@
             <div
                 style="margin-top: 25px; background: #fff8f5; padding: 15px; border-radius: 12px; border: 1px solid #ff7f3f;">
                 <p style="color: #ff7f3f; font-weight: 700; font-size: 16px;">
-                    🎉 축하합니다!<br>재방문 감사 쿠폰이 발급되었습니다.
+                    {{ coupon_issued | safe }}
                 </p>
             </div>
             {% endif %}

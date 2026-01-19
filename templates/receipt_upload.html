@@ -43,7 +43,7 @@
                         </span>
 
                         <input type="file" name="receipt_image" id="fileInput" class="file-input-hidden"
-                            accept="image/*" capture="environment" required>
+                            accept="image/*" required>
 
                         <img id="previewImg" class="preview-img" src="" alt="미리보기">
                     </div>
@@ -102,6 +102,11 @@
         const uploadBox = document.getElementById('uploadBox');
         const uploadText = document.getElementById('uploadText');
         const icon = document.querySelector('.upload-icon');
+
+        // [iOS/Mobile Fix] div 클릭 시 hidden input 트리거
+        uploadBox.addEventListener('click', function () {
+            fileInput.click();
+        });
 
         fileInput.addEventListener('change', function (event) {
             const file = event.target.files[0];
