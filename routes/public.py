@@ -296,4 +296,6 @@ def receipt_process():
                            visit_count=member.visit_count,
                            current_amount=amount,
                            total_amount=total_spent,
-                           coupon_issued=save_message)
+                           coupon_issued=save_message,
+                           member_id=member.id,
+                           phone=member.phone)

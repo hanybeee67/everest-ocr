@@ -54,9 +54,24 @@
         </div>
 
         <div style="margin-top: 20px;">
-            <a href="/" class="btn-primary" style="display: block; text-decoration: none; text-align: center;">
+            <a href="/" class="btn-primary"
+                style="display: block; text-decoration: none; text-align: center; margin-bottom: 10px;">
                 확인
             </a>
+
+            <!-- [UX 개선] 포인트가 있으면 쿠폰함으로 바로 가기 버튼 노출 -->
+            {% if total_amount >= 150000 %} <!-- 최소 교환 포인트 (임의 기준: 15만점 이상이면 노출 권장 or 아예 항상 노출) -->
+            <a href="/reward/status?member_id={{ member_id }}&phone={{ phone }}" class="btn-primary"
+                style="display: block; text-decoration: none; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                🎁 내 쿠폰함 / 포인트 보기
+            </a>
+            {% else %}
+            <!-- 포인트가 적더라도 동기 부여를 위해 노출 (선택사항) -->
+            <a href="/reward/status?member_id={{ member_id }}&phone={{ phone }}"
+                style="display: block; margin-top:15px; text-decoration: underline; text-align: center; color: #666; font-size:14px;">
+                내 포인트 확인하기
+            </a>
+            {% endif %}
         </div>
 
         {% else %}
