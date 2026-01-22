@@ -110,15 +110,48 @@ def join():
     agree_privacy = "yes" if request.form.get("agree_privacy") else "no"
     today = datetime.now().strftime("%Y-%m-%d")
 
+    today_date = datetime.now()
     new_member = Members(
         name=name, phone=phone, branch=branch, birth=birth,
         gender=gender, age_group=age_group,
         agree_marketing=agree_marketing, agree_privacy=agree_privacy,
         visit_count=0, 
         last_visit=today,
-        created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at=today_date.strftime("%Y-%m-%d %H:%M:%S")
     )
     db.session.add(new_member)
+    db.session.flush() # ID 생성을 위해 flush
+    
+    # [Start-Up Event] 신규 가입 웰컴 쿠폰 (플레인 난) 발급
+    from datetime import timedelta
+    expiry_date = today_date + timedelta(days=30)
+    unique_code = f"WC-{uuid.uuid4().hex[:8].upper()}"
+    
+    welcome_coupon = Coupons(
+        member_id=new_member.id,
+        coupon_code=unique_code,
+        coupon_type="가입 감사 - 플레인 난(1개)",
+        issued_date=today_date,
+        expiry_date=expiry_date,
+        status='AVAILABLE',
+        is_used=False
+    )
+    db.session.add(welcome_coupon)
+    
+    # 알림 발송 (매직 링크 포함)
+    try:
+        from flask import current_app
+        from itsdangerous import URLSafeTimedSerializer
+        from services.notification_service import send_notification
+        
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        token = s.dumps(new_member.id, salt='coupon-access')
+        
+        msg = f"[에베레스트] 가입을 환영합니다! '플레인 난' 무료 쿠폰이 도착했습니다.\n쿠폰함: https://everest-membership.com/reward/my-coupons?token={token}"
+        send_notification(new_member.phone, msg)
+    except Exception as e:
+        current_app.logger.error(f"Failed to send welcome notification: {e}")
+
     db.session.commit()
     
     # 신규 회원은 내역 없음
@@ -129,7 +162,8 @@ def join():
                            name=new_member.name, 
                            branch_name=branch, 
                            visit_count=0,
-                           recent_history=recent_history)
+                           recent_history=recent_history,
+                           coupon_issued="회원가입 감사: '플레인 난' 쿠폰이 발급되었습니다!<br>(문자/카톡을 확인해주세요)")
 
 @public_bp.route("/receipt/process", methods=["POST"])
 @limiter.limit("3 per minute") # [보안] 이미지 업로드 폭탄 방지
