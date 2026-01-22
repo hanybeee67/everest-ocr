@@ -4,9 +4,9 @@ import uuid
 from models import db, Members, Coupons, Receipts
 
 TIERS = {
-    1: {"cost": 100000, "name": "Lv1. 사모사 또는 굴자빵"},
-    2: {"cost": 200000, "name": "Lv2. 모모(만두) 또는 차오면(볶음면)"},
-    3: {"cost": 300000, "name": "Lv3. 세쿠와 또는 탄두리 치킨(한 마리)"}
+    1: {"cost": 100000, "name": "Lv1. 사모사/굴자빵 중 택1"},
+    2: {"cost": 200000, "name": "Lv2. 모모(만두)/차오면(볶음면) 중 택1"},
+    3: {"cost": 300000, "name": "Lv3. 세쿠와/탄두리 치킨(한 마리) 중 택1"}
 }
 
 def claim_reward_service(user_id, tier_level):
