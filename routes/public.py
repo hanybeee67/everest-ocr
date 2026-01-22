@@ -130,7 +130,7 @@ def join():
     welcome_coupon = Coupons(
         member_id=new_member.id,
         coupon_code=unique_code,
-        coupon_type="가입 감사 - 플레인 난(1개)",
+        coupon_type="[채널추가 필수] 플레인 난 무료",
         issued_date=today_date,
         expiry_date=expiry_date,
         status='AVAILABLE',
@@ -147,7 +147,7 @@ def join():
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         token = s.dumps(new_member.id, salt='coupon-access')
         
-        msg = f"[에베레스트] 가입을 환영합니다! '플레인 난' 무료 쿠폰이 도착했습니다.\n쿠폰함: https://everest-membership.com/reward/my-coupons?token={token}"
+        msg = f"[에베레스트] 가입 환영!\n카카오톡 채널을 추가하시면 '플레인 난'을 무료로 드립니다.\n쿠폰함: https://everest-membership.com/reward/my-coupons?token={token}"
         send_notification(new_member.phone, msg)
     except Exception as e:
         current_app.logger.error(f"Failed to send welcome notification: {e}")
@@ -163,7 +163,7 @@ def join():
                            branch_name=branch, 
                            visit_count=0,
                            recent_history=recent_history,
-                           coupon_issued="회원가입 감사: '플레인 난' 쿠폰이 발급되었습니다!<br>(문자/카톡을 확인해주세요)")
+                           coupon_issued="회원가입 완료!<br><b>카톡 채널을 추가</b>하시고 직원에게 보여주시면<br>'플레인 난'을 무료로 드립니다.")
 
 @public_bp.route("/receipt/process", methods=["POST"])
 @limiter.limit("3 per minute") # [보안] 이미지 업로드 폭탄 방지
