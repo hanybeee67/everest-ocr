@@ -16,14 +16,14 @@
         <div class="brand-logo">EVEREST MEMBERSHIP</div>
 
         {% if success %}
-        <div style="text-align: center; margin-bottom: 20px;">
-            <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #ff7f3f; margin-bottom: 20px;"></i>
+        <div style="text-align: center; margin-bottom: 10px;">
+            <i class="fa-solid fa-circle-check" style="font-size: 50px; color: #ff7f3f; margin-bottom: 10px;"></i>
 
-            <h1 class="welcome-title" style="font-size: 28px;">
+            <h1 class="welcome-title" style="font-size: 22px; margin: 0 0 10px 0;">
                 <span style="color: #ff7f3f;">{{ member_name }}</span>님,<br>감사합니다!
             </h1>
 
-            <p class="welcome-desc" style="font-size: 18px; color: #333;">
+            <p class="welcome-desc" style="font-size: 15px; color: #333; margin: 0;">
                 {% if visit_count == 1 %}
                 <span class="branch-highlight" style="font-weight: 800;">첫 방문</span>을 환영합니다!
                 {% else %}
@@ -32,30 +32,32 @@
             </p>
         </div>
 
-        <div class="mobile-card">
-            <div style="text-align: left; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-                <p style="font-size: 14px; color: #888;">이번 결제 금액</p>
-                <p style="font-size: 24px; font-weight: 700; color: #333;">{{ "{:,}".format(current_amount) }}원</p>
+        <div class="mobile-card" style="padding: 15px; margin-bottom: 15px;">
+            <div style="text-align: left; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                <p style="font-size: 13px; color: #888; margin: 0 0 5px 0;">이번 결제 금액</p>
+                <p style="font-size: 20px; font-weight: 700; color: #333; margin: 0;">{{ "{:,}".format(current_amount)
+                    }}원</p>
             </div>
 
             <div style="text-align: left;">
-                <p style="font-size: 14px; color: #888;">총 누적 금액</p>
-                <p style="font-size: 20px; font-weight: 600; color: #555;">{{ "{:,}".format(total_amount) }}원</p>
+                <p style="font-size: 13px; color: #888; margin: 0 0 5px 0;">총 누적 금액</p>
+                <p style="font-size: 18px; font-weight: 600; color: #555; margin: 0;">{{ "{:,}".format(total_amount) }}원
+                </p>
             </div>
 
             {% if coupon_issued %}
             <div
-                style="margin-top: 25px; background: #fff8f5; padding: 15px; border-radius: 12px; border: 1px solid #ff7f3f;">
-                <p style="color: #ff7f3f; font-weight: 700; font-size: 16px;">
+                style="margin-top: 15px; background: #fff8f5; padding: 10px; border-radius: 8px; border: 1px solid #ff7f3f;">
+                <p style="color: #ff7f3f; font-weight: 700; font-size: 14px; margin: 0;">
                     {{ coupon_issued | safe }}
                 </p>
             </div>
             {% endif %}
         </div>
 
-        <div style="margin-top: 20px;">
+        <div style="margin-top: 15px;">
             <a href="/" class="btn-primary"
-                style="display: block; text-decoration: none; text-align: center; margin-bottom: 10px;">
+                style="display: block; text-decoration: none; text-align: center; margin-bottom: 8px; padding: 12px; font-size: 16px;">
                 확인
             </a>
 

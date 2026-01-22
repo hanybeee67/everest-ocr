@@ -123,7 +123,26 @@
             <div>누적 사용액: {{ "{:,}".format((member.total_lifetime_spend or 0)|int) }}원</div>
         </div>
 
-        <h3>🎁 리워드 교환</h3>
+        {% if available_coupons %}
+        <div class="coupon-list" style="margin: 20px 0 30px 0;">
+            <h3 style="color: #d63384;">🎫 보유 쿠폰 (사용 가능한 쿠폰)</h3>
+            {% for coupon in available_coupons %}
+            <div class="coupon-card" style="border: 2px solid #ff7f3f; background-color: #fff8f5;">
+                <div style="font-weight: bold; font-size: 1.1em; color: #333;">{{ coupon.coupon_type }}</div>
+                <div class="coupon-code" style="margin: 5px 0;">{{ coupon.coupon_code }}</div>
+                <div style="font-size: 0.9em; color: #666;">
+                    유효기간: ~{{ coupon.expiry_date.strftime('%Y-%m-%d') if coupon.expiry_date else '무제한' }}
+                    <span class="badge">사용가능</span>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85em; color: #888;">
+                    * 직원에게 보여주세요
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <h3>🎁 포인트 교환 (리워드)</h3>
         <div class="tier-list">
             {% for level, info in tiers.items() %}
             <div class="tier-card">
@@ -140,22 +159,6 @@
             </div>
             {% endfor %}
         </div>
-
-        {% if available_coupons %}
-        <div class="coupon-list">
-            <h3>🎫 보유 쿠폰</h3>
-            {% for coupon in available_coupons %}
-            <div class="coupon-card">
-                <div>{{ coupon.coupon_type }}</div>
-                <div class="coupon-code">{{ coupon.coupon_code }}</div>
-                <div style="font-size: 0.9em; color: #666;">
-                    유효기간: ~{{ coupon.expiry_date.strftime('%Y-%m-%d') if coupon.expiry_date else '무제한' }}
-                    <span class="badge">사용가능</span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
     </div>
 
     <script>
