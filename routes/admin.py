@@ -111,6 +111,9 @@ def edit_member(member_id):
     current_total = db.session.query(func.sum(Receipts.amount)).filter_by(member_id=member.id).scalar() or 0
 
     curr_receipts = Receipts.query.filter_by(member_id=member.id).order_by(Receipts.visit_date.desc()).all()
+    
+    # [신규] 쿠폰 목록 조회
+    coupons = Coupons.query.filter_by(member_id=member.id).order_by(Coupons.issued_date.desc()).all()
 
     if request.method == "POST":
         # 1. 기본 정보 수정
@@ -138,7 +141,7 @@ def edit_member(member_id):
         db.session.commit()
         return redirect("/admin_8848/members")
 
-    return render_template("edit_member.html", member=member, total_amount=current_total, receipts=curr_receipts)
+    return render_template("edit_member.html", member=member, total_amount=current_total, receipts=curr_receipts, coupons=coupons)
 
 @admin_bp.route("/receipt/<int:receipt_id>/update", methods=["POST"])
 def update_receipt(receipt_id):

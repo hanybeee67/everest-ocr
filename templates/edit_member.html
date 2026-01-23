@@ -127,11 +127,12 @@
                 </form>
             </div>
 
-            <!-- 오른쪽: 영수증 목록 및 개별 수정 -->
+            <!-- 오른쪽: 영수증 목록 및 쿠폰 기록 -->
             <div style="flex: 1.5; min-width: 350px;">
+                <!-- 영수증 섹션 -->
                 <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">방문/결제 기록 ({{ receipts|length }}건)</h3>
-
-                <div style="max-height: 500px; overflow-y: auto; background: white; border: 1px solid #eee;">
+                <div
+                    style="max-height: 300px; overflow-y: auto; background: white; border: 1px solid #eee; margin-bottom: 30px;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead style="background: #f1f1f1; position: sticky; top: 0;">
                             <tr>
@@ -163,6 +164,49 @@
                                         <button type="submit"
                                             style="padding: 4px 8px; font-size: 11px; flex: none; width: auto; background: #ff4444; color: white;">삭제</button>
                                     </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- [신규] 쿠폰 내역 섹션 -->
+                <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px; color: #d35400;">쿠폰 발급/사용 내역 ({{
+                    coupons|length }}건)</h3>
+                <div style="max-height: 300px; overflow-y: auto; background: white; border: 1px solid #ffefe0;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead style="background: #fff8f5; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 8px; text-align: left;">쿠폰명</th>
+                                <th style="padding: 8px; text-align: center;">상태</th>
+                                <th style="padding: 8px; text-align: right;">발급일/사용일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in coupons %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 8px; line-height: 1.4;">
+                                    <div style="font-weight: bold; color: #333;">{{ c.coupon_type }}</div>
+                                    <div style="font-size: 11px; color: #888;">{{ c.coupon_code }}</div>
+                                </td>
+                                <td style="padding: 8px; text-align: center;">
+                                    {% if c.status == 'AVAILABLE' %}
+                                    <span
+                                        style="background: #4CAF50; color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px;">사용가능</span>
+                                    {% elif c.status == 'USED' %}
+                                    <span
+                                        style="background: #9fa8da; color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px;">사용완료</span>
+                                    {% elif c.status == 'EXPIRED' %}
+                                    <span
+                                        style="background: #999; color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px;">만료됨</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 8px; text-align: right; color: #666;">
+                                    <div>발급: {{ c.issued_date.strftime('%Y-%m-%d') }}</div>
+                                    {% if c.used_date %}
+                                    <div style="color: #d35400;">사용: {{ c.used_date.strftime('%Y-%m-%d') }}</div>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

@@ -55,12 +55,20 @@ def claim_reward_service(user_id, tier_level):
         # itsdangerous를 사용하여 member_id가 담긴 토큰 생성
         from flask import current_app
         from itsdangerous import URLSafeTimedSerializer
-        from services.notification_service import send_notification
+        from services.notification_service import send_notification, get_alimtalk_template
         
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         token = s.dumps(member.id, salt='coupon-access')
         
-        msg = f"[에베레스트] {tier_info['name']} 쿠폰이 발급되었습니다.\n바로가기: https://everest-membership.com/reward/my-coupons?token={token}"
+        link = f"https://everest-membership.com/reward/my-coupons?token={token}"
+        formatted_expiry = expiry_date.strftime("%Y-%m-%d")
+        
+        msg = get_alimtalk_template("REWARD",
+                                  coupon_name=tier_info['name'],
+                                  expiry_date=formatted_expiry,
+                                  points_used=cost,
+                                  link=link)
+                                  
         send_notification(member.phone, msg)
         
         return {
