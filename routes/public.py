@@ -128,45 +128,28 @@ def join():
     db.session.add(new_member)
     db.session.flush() # ID 생성을 위해 flush
     
+    db.session.flush() # ID 생성을 위해 flush
+    
     # [Start-Up Event] 신규 가입 웰컴 쿠폰 (플레인 난) 발급
-    from datetime import timedelta
-    expiry_date = today_date + timedelta(days=30)
-    unique_code = f"WC-{uuid.uuid4().hex[:8].upper()}"
-    
-    welcome_coupon = Coupons(
-        member_id=new_member.id,
-        coupon_code=unique_code,
-        coupon_type="[채널추가 필수] 플레인 난 무료",
-        issued_date=today_date,
-        expiry_date=expiry_date,
-        status='AVAILABLE',
-        is_used=False
-    )
-    db.session.add(welcome_coupon)
-    
-    # 알림 발송 (매직 링크 포함)
+    # [Refactor] 비즈니스 로직 분리 (services/coupon_service.py)
     try:
-        from flask import current_app
-        from itsdangerous import URLSafeTimedSerializer
-        from services.notification_service import send_notification, get_alimtalk_template
-        
-        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-        token = s.dumps(new_member.id, salt='coupon-access')
-        
-        # [Update] 사용자 요청 도메인 및 단축 경로 적용
-        link = f"https://membership.everestfood.com/my-coupons?token={token}"
-        formatted_expiry = expiry_date.strftime("%Y-%m-%d")
-        
-        msg = get_alimtalk_template("WELCOME", 
-                                  coupon_name="[채널추가 필수] 플레인 난 무료", 
-                                  expiry_date=formatted_expiry, 
-                                  link=link)
-        
-        send_notification(new_member.phone, msg)
+        from services.coupon_service import process_signup_bonus
+        process_signup_bonus(new_member)
     except Exception as e:
-        current_app.logger.error(f"Failed to send welcome notification: {e}")
-
-    db.session.commit()
+        current_app.logger.error(f"Signup bonus process failed: {e}")
+        # 오류 발생해도 가입은 완료 처리 (보수적 접근)
+        db.session.commit()
+    
+    # 신규 회원은 내역 없음
+    recent_history = []
+    
+    return render_template("receipt_upload.html", 
+                           member_id=new_member.id, 
+                           name=new_member.name, 
+                           branch_name=branch, 
+                           visit_count=0,
+                           recent_history=recent_history,
+                           coupon_issued="회원가입 완료!<br><b>카톡 채널을 추가</b>하시고 직원에게 보여주시면<br>'플레인 난'을 무료로 드립니다.")
     
     # 신규 회원은 내역 없음
     recent_history = []

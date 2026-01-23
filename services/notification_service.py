@@ -56,16 +56,39 @@ def get_alimtalk_template(template_type, **kwargs):
         
     return ""
 
-def send_notification(phone, message):
+def send_alimtalk(phone, template_code, variable_map, button_info=None):
     """
-    [Placeholder] SMS or KakaoTalk notification sender.
-    Currently just logs the message. Integrate with Solapi/Aligo later.
+    알리고 알림톡 발송 (Placeholder)
+    - template_code: 알리고 템플릿 코드 (예: TB_1234)
+    - variable_map: 템플릿 내 변수 치환값 (예: {'#{이름}': '홍길동'})
+    - button_info: 버튼 정보 (JSON string or dict)
     """
     try:
-        # 실제 발송 로직이 들어갈 곳
-        # 예: api.send_sms(to=phone, text=message)
+        # 실제 알리고 API 연동 시 필요한 데이터 구조
+        payload = {
+            "receiver": phone,
+            "tpl_code": template_code,
+            "replacements": variable_map, # 알리고 API에 따라 포맷 조정 필요
+            "button_1": button_info
+        }
         
-        # 로그로 대체 확인
+        # 로그로 데이터 확인
+        current_app.logger.info(f"[ALIGO ALIMTALK] To: {phone} | Tpl: {template_code}")
+        current_app.logger.info(f"Vars: {variable_map}")
+        current_app.logger.info(f"Button: {button_info}")
+        
+        # 콘솔 출력 (개발용)
+        print(f"📨 [알림톡 발송 요청]\n수신: {phone}\n템플릿: {template_code}\n변수: {variable_map}\n버튼: {button_info}")
+        return True
+    except Exception as e:
+        current_app.logger.error(f"Alimtalk failed: {e}")
+        return False
+
+def send_notification(phone, message):
+    """
+    [Legacy] 일반 문자/알림톡 발송 (단순 텍스트)
+    """
+    try:
         current_app.logger.info(f"[NOTIFICATION] To: {phone} | Msg: {message}")
         print(f"📨 [전송됨] {phone}: \n{message}")
         return True

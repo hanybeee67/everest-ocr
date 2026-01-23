@@ -134,3 +134,68 @@ def redeem_coupon_service(coupon_code, staff_pin, branch_code):
     except Exception as e:
         db.session.rollback()
         return {"success": False, "message": f"처리 중 오류: {e}"}
+
+def process_signup_bonus(member):
+    """
+    신규 회원 가입 시 환영 쿠폰 발급 및 알림톡 발송
+    - Coupon: 플레인 난(Plain Naan) 1개 무료
+    - Notification: AlimTalk (ALIGO_TPL_SIGNUP)
+    """
+    import os
+    import json
+    from flask import current_app
+    from itsdangerous import URLSafeTimedSerializer
+    from services.notification_service import send_alimtalk
+    
+    # 1. 쿠폰 생성
+    today_date = datetime.now()
+    expiry_date = today_date + timedelta(days=30)
+    unique_code = f"WC-{uuid.uuid4().hex[:8].upper()}"
+    
+    welcome_coupon = Coupons(
+        member_id=member.id,
+        coupon_code=unique_code,
+        coupon_type="플레인 난(Plain Naan) 1개 무료", # [요청사항 반영]
+        issued_date=today_date,
+        expiry_date=expiry_date,
+        status='AVAILABLE',
+        is_used=False
+    )
+    db.session.add(welcome_coupon)
+    
+    # 2. 알림톡 발송 준비
+    try:
+        # 환경변수에서 템플릿 코드 로드 (없으면 기본값)
+        template_code = os.environ.get("ALIGO_TPL_SIGNUP", "TB_SIGNUP_001")
+        
+        # 매직 링크 생성
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        token = s.dumps(member.id, salt='coupon-access')
+        link_url = f"https://membership.everestfood.com/my-coupons?token={token}"
+        
+        # 변수 매핑
+        variable_map = {
+            "#{이름}": member.name,
+            "#{발급일}": today_date.strftime("%Y-%m-%d"),
+            "#{유효기간}": expiry_date.strftime("%Y-%m-%d")
+        }
+        
+        # 버튼 설정
+        button_data = {
+            "name": "쿠폰 확인하기", # 버튼명 (템플릿 설정에 따름)
+            "linkType": "WL", # Web Link
+            "linkTypeName": "웹링크",
+            "linkMo": link_url,
+            "linkPc": link_url
+        }
+        button_json = json.dumps({"button": [button_data]}) # 알리고 형식 (버튼 리스트)
+        
+        # 알림톡 발송 요청
+        send_alimtalk(member.phone, template_code, variable_map, button_json)
+        
+    except Exception as e:
+        current_app.logger.error(f"Signup bonus notification failed: {e}")
+        # 알림 실패해도 쿠폰은 저장되어야 함
+
+    db.session.commit()
+    return True
