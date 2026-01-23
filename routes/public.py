@@ -97,6 +97,12 @@ def check():
     else:
         return render_template("join.html", phone=phone, branch=branch_name, branch_code=branch_code)
 
+@public_bp.route("/my-coupons")
+def my_coupons_redirect():
+    # [Short URL Support] /my-coupons -> /reward/my-coupons (쿼리 파라미터 유지)
+    from flask import url_for
+    return redirect(url_for('reward.my_coupons', **request.args))
+
 @public_bp.route("/join", methods=["POST"])
 def join():
     name = request.form.get("name")
@@ -147,7 +153,8 @@ def join():
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         token = s.dumps(new_member.id, salt='coupon-access')
         
-        link = f"https://everest-membership.com/reward/my-coupons?token={token}"
+        # [Update] 사용자 요청 도메인 및 단축 경로 적용
+        link = f"https://membership.everestfood.com/my-coupons?token={token}"
         formatted_expiry = expiry_date.strftime("%Y-%m-%d")
         
         msg = get_alimtalk_template("WELCOME", 

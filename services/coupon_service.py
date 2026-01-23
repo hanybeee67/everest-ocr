@@ -60,7 +60,8 @@ def claim_reward_service(user_id, tier_level):
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         token = s.dumps(member.id, salt='coupon-access')
         
-        link = f"https://everest-membership.com/reward/my-coupons?token={token}"
+        # [Update] 사용자 요청 도메인 및 단축 경로 적용
+        link = f"https://membership.everestfood.com/my-coupons?token={token}"
         formatted_expiry = expiry_date.strftime("%Y-%m-%d")
         
         msg = get_alimtalk_template("REWARD",
