@@ -16,6 +16,37 @@ BRANCH_NAMES = {
     "룸비니": ["룸비니", "동묘역", "자매식당"],
 }
 
+# [Security] 사업자등록번호 리스트 (가짜 영수증 방지)
+VALID_BIZ_NUMBERS = [
+    "101-05-48485", # 동대문 01
+    "107-14-87718", # 영등포 02
+    "201-86-18242", # 굿모닝 03
+    "769-85-00538", # 수원 04
+    "436-85-01826", # 동탄 07
+    "612-85-18896", # 양재 08
+    "715-85-00297", # 하남스타필드
+    "637-85-00323", # 고양스타필드(폐점)
+    "502-85-42712"  # 룸비니
+]
+
+def check_business_number(ocr_text):
+    """
+    OCR 텍스트에서 유효한 사업자번호가 존재하는지 확인.
+    하이픈(-), 공백 등을 제거하고 순수 숫자열로 비교.
+    """
+    if not ocr_text: str = ""
+    
+    # OCR 텍스트 정규화 (숫자만 남김)
+    normalized_text = re.sub(r'[^0-9]', '', ocr_text)
+    
+    for biz_num in VALID_BIZ_NUMBERS:
+        # 비교군도 정규화
+        clean_biz = biz_num.replace('-', '')
+        if clean_biz in normalized_text:
+            return True, biz_num
+            
+    return False, None
+
 def detect_text_from_receipt(image_path):
     credentials_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
     if not credentials_json:

@@ -207,27 +207,27 @@ def receipt_process():
         ocr_result_text = detect_text_from_receipt(image_path)
         current_app.logger.info(f"OCR Result Length: {len(ocr_result_text) if ocr_result_text else 0}")
         
-        # [검증] '에베레스트' 키워드 확인 (타 업장 영수증 방지)
-        is_valid_receipt = False
-        if ocr_result_text:
-            keywords = ["에베레스트", "EVEREST", "everest", "Everest"]
-            for k in keywords:
-                if k in ocr_result_text:
-                    is_valid_receipt = True
-                    break
+        ocr_result_text = detect_text_from_receipt(image_path)
+        current_app.logger.info(f"OCR Result Length: {len(ocr_result_text) if ocr_result_text else 0}")
         
-        if not is_valid_receipt:
+        # [보안 강화] 사업자등록번호 검증 (가짜/수기 영수증 차단)
+        # 이제 단순 키워드('에베레스트')가 아닌, 등록된 사업자번호 유무로 판단합니다.
+        from services.ocr_parser import check_business_number
+        is_valid_biz, matched_biz = check_business_number(ocr_result_text)
+        
+        if is_valid_biz:
+            current_app.logger.info(f"Valid Business Number Found: {matched_biz}")
+        else:
             # 실패 시에도 이미지는 삭제해야 함
             if image_path and os.path.exists(image_path):
                 os.remove(image_path)
             
-            # OCR 텍스트가 있는데 키워드가 없는 경우 -> 어떤 글자가 읽혔는지 로그
             if ocr_result_text:
-                current_app.logger.warning(f"Invalid Receipt Text: {ocr_result_text[:100]}...")
+                current_app.logger.warning(f"Invalid Receipt (No Biz Num): {ocr_result_text[:100]}...")
                 
             return render_template("result.html", 
                                  title="인증 실패", 
-                                 message="영수증을 확인할 수 없습니다.<br>매장에서 발급된 정식 영수증인지 확인해주세요.<br>(문제가 지속되면 직원에게 문의 바랍니다)", 
+                                 message="영수증에서 '사업자등록번호'를 식별할 수 없습니다.<br>화질이 흐릿하거나 구겨진 영수증은 인식이 어렵습니다.<br>선명하게 다시 촬영해주시거나 직원에게 문의해주세요.", 
                                  success=False)
         
     except Exception as e:
