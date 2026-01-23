@@ -316,7 +316,23 @@ def receipt_process():
     new_receipt.amount_claimed = amount
     new_receipt.image_url = image_url
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        # [예외 처리] 중복 키 오류(IntegrityError) 등 DB 커밋 실패 대응
+        db.session.rollback()
+        current_app.logger.error(f"Receipt DB Commit Error: {e}")
+        
+        # 이미지는 삭제
+        if image_path and os.path.exists(image_path):
+            try: os.remove(image_path)
+            except: pass
+            
+        # 중복 에러일 가능성이 높으므로 안내 메시지
+        if "UNIQUE constraint" in str(e) or "UniqueViolation" in str(e):
+             return render_template("result.html", title="이미 등록된 영수증", message="이미 등록하신 영수증입니다.", success=False)
+             
+        return render_template("result.html", title="시스템 오류", message="데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요.", success=False)
     
     total_spent = member.total_lifetime_spend or 0
 
