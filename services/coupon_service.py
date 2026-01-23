@@ -5,15 +5,34 @@ from models import db, Members, Coupons, Receipts
 
 TIERS = {
     1: {"cost": 100000, "name": "Lv1. 사모사/굴자빵 중 택1"},
-    2: {"cost": 200000, "name": "Lv2. 모모(만두)/차오면(볶음면) 중 택1"},
-    3: {"cost": 300000, "name": "Lv3. 세쿠와/탄두리 치킨(한 마리) 중 택1"}
+    2: {"cost": 200000, "name": "Lv2. 모모/차오면 무료"},
+    3: {"cost": 300000, "name": "Lv3. 커리(Curry) 1개 무료"},
+    4: {"cost": 400000, "name": "Lv4. 탄두리 치킨(1마리) 또는 세꾸와 무료"}
 }
+
+def get_coupon_name_by_amount(amount):
+    """
+    금액(포인트)에 따른 쿠폰 표시명 반환 (알림톡 변수용)
+    """
+    if amount >= 400000:
+        return "탄두리 치킨(1마리) 또는 세꾸와 무료"
+    elif amount >= 300000:
+        return "커리(Curry) 1개 무료"
+    elif amount >= 200000:
+        return "모모 또는 짜오미엔 무료"
+    elif amount >= 100000:
+        return "사모사 또는 굴자빵 무료"
+    else:
+        return "Unknown Reward"
 
 def claim_reward_service(user_id, tier_level):
     """
     사용자가 리워드를 수령(포인트 차감 -> 쿠폰 발급).
     유효기간: 30일
     """
+    import os
+    import json
+    
     member = Members.query.get(user_id)
     if not member:
         return {"success": False, "message": "사용자를 찾을 수 없습니다."}
@@ -36,6 +55,8 @@ def claim_reward_service(user_id, tier_level):
     expiry_date = datetime.now() + timedelta(days=30) # 유효기간 30일
     unique_code = f"CP-{uuid.uuid4().hex[:8].upper()}"
     
+    # 쿠폰 타입명은 TIERS의 이름을 그대로 사용 (DB 저장용)
+    # 알림톡 발송 시에는 get_coupon_name_by_amount로 변환된 이름을 사용
     new_coupon = Coupons(
         member_id=member.id,
         coupon_code=unique_code,
@@ -51,26 +72,40 @@ def claim_reward_service(user_id, tier_level):
     try:
         db.session.commit()
         
-        # [Notification] 쿠폰 발급 알림 발송 (Magic Link)
-        # itsdangerous를 사용하여 member_id가 담긴 토큰 생성
+        # [Notification] 알림톡 발송 (Aligo)
         from flask import current_app
         from itsdangerous import URLSafeTimedSerializer
-        from services.notification_service import send_notification, get_alimtalk_template
+        from services.notification_service import send_alimtalk
+        
+        # 환경변수 템플릿 코드 (없으면 기본값)
+        template_code = os.environ.get("ALIGO_TPL_REWARD", "TB_REWARD_001")
         
         s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
         token = s.dumps(member.id, salt='coupon-access')
-        
-        # [Update] 사용자 요청 도메인 및 단축 경로 적용
-        link = f"https://membership.everestfood.com/my-coupons?token={token}"
+        link_url = f"https://membership.everestfood.com/my-coupons?token={token}"
         formatted_expiry = expiry_date.strftime("%Y-%m-%d")
         
-        msg = get_alimtalk_template("REWARD",
-                                  coupon_name=tier_info['name'],
-                                  expiry_date=formatted_expiry,
-                                  points_used=cost,
-                                  link=link)
-                                  
-        send_notification(member.phone, msg)
+        # [Logic] 금액에 따른 쿠폰명 매핑
+        display_coupon_name = get_coupon_name_by_amount(cost)
+        
+        # 변수 매핑
+        variable_map = {
+            "#{이름}": member.name,
+            "#{쿠폰이름}": display_coupon_name,
+            "#{유효기간}": formatted_expiry
+        }
+        
+        # 버튼 설정
+        button_data = {
+            "name": "쿠폰 확인하기",
+            "linkType": "WL",
+            "linkTypeName": "웹링크",
+            "linkMo": link_url,
+            "linkPc": link_url
+        }
+        button_json = json.dumps({"button": [button_data]})
+        
+        send_alimtalk(member.phone, template_code, variable_map, button_json)
         
         return {
             "success": True, 
