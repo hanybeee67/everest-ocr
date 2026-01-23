@@ -4,10 +4,10 @@ import uuid
 from models import db, Members, Coupons, Receipts
 
 TIERS = {
-    1: {"cost": 100000, "name": "Lv1. 사모사/굴자빵 중 택1"},
-    2: {"cost": 200000, "name": "Lv2. 모모/차오면 무료"},
-    3: {"cost": 300000, "name": "Lv3. 커리(Curry) 1개 무료"},
-    4: {"cost": 400000, "name": "Lv4. 탄두리 치킨(1마리) 또는 세꾸와 무료"}
+    1: {"cost": 100000, "name": "사모사 or 굴자빵 무료"},
+    2: {"cost": 200000, "name": "모모 or 짜오미엔 무료"},
+    3: {"cost": 300000, "name": "Any 커리 1개 무료"},
+    4: {"cost": 400000, "name": "탄두리1마리 or 세꾸와 무료"}
 }
 
 def get_coupon_name_by_amount(amount):
@@ -15,13 +15,13 @@ def get_coupon_name_by_amount(amount):
     금액(포인트)에 따른 쿠폰 표시명 반환 (알림톡 변수용)
     """
     if amount >= 400000:
-        return "탄두리 치킨(1마리) 또는 세꾸와 무료"
+        return "탄두리1마리 or 세꾸와 무료"
     elif amount >= 300000:
-        return "커리(Curry) 1개 무료"
+        return "Any 커리 1개 무료"
     elif amount >= 200000:
-        return "모모 또는 짜오미엔 무료"
+        return "모모 or 짜오미엔 무료"
     elif amount >= 100000:
-        return "사모사 또는 굴자빵 무료"
+        return "사모사 or 굴자빵 무료"
     else:
         return "Unknown Reward"
 
