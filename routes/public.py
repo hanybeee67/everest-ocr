@@ -227,7 +227,7 @@ def receipt_process():
                 
             return render_template("result.html", 
                                  title="인증 실패", 
-                                 message="영수증에서 '에베레스트' 글자를 찾을 수 없습니다.<br>올바른 영수증인지 확인해주세요.", 
+                                 message="영수증을 확인할 수 없습니다.<br>매장에서 발급된 정식 영수증인지 확인해주세요.<br>(문제가 지속되면 직원에게 문의 바랍니다)", 
                                  success=False)
         
     except Exception as e:
