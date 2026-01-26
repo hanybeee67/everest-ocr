@@ -207,8 +207,7 @@ def receipt_process():
         ocr_result_text = detect_text_from_receipt(image_path)
         current_app.logger.info(f"OCR Result Length: {len(ocr_result_text) if ocr_result_text else 0}")
         
-        ocr_result_text = detect_text_from_receipt(image_path)
-        current_app.logger.info(f"OCR Result Length: {len(ocr_result_text) if ocr_result_text else 0}")
+
         
         # [보안 강화] 사업자등록번호 검증 (가짜/수기 영수증 차단)
         # 이제 단순 키워드('에베레스트')가 아닌, 등록된 사업자번호 유무로 판단합니다.

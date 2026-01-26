@@ -70,8 +70,7 @@ def detect_text_from_receipt(image_path):
             raise Exception(f"구글 API 에러: {response.error.message}")
 
         texts = response.text_annotations
-        if os.path.exists(image_path):
-            os.remove(image_path)
+
 
         if texts:
             # 전체 텍스트 로그 (디버깅용)
@@ -82,8 +81,7 @@ def detect_text_from_receipt(image_path):
             return None
 
     except Exception as e:
-        if os.path.exists(image_path):
-            os.remove(image_path)
+
         raise e 
 
 def parse_receipt_text(ocr_text):
