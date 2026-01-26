@@ -174,9 +174,19 @@
                 <div style="font-size:12px; margin-top:3px; color:#aaa;">Serial: {{ coupon.coupon_code }}</div>
             </div>
 
+            {% if "플레인 난" in coupon.coupon_type %}
+            <button class="btn-use" style="background: #27ae60;"
+                onclick="openSimpleRedeemModal('{{ coupon.coupon_code }}', '{{ coupon.coupon_type }}')">
+                <i class="fa-solid fa-check"></i> 직원 확인 완료 (간편 사용)
+            </button>
+            <p style="text-align:center; font-size:12px; color:#888; margin-top:5px;">
+                * 직원이 이미지를 확인하면 위 버튼을 눌러주세요.
+            </p>
+            {% else %}
             <button class="btn-use" onclick="openRedeemModal('{{ coupon.coupon_code }}', '{{ coupon.coupon_type }}')">
                 <i class="fa-solid fa-utensils"></i> 직원에게 보여주기 (사용하기)
             </button>
+            {% endif %}
         </div>
         {% endfor %}
         {% else %}
@@ -215,20 +225,22 @@
         </div>
     </div>
 
-    <!-- Redemption Modal -->
+    <!-- Redemption Modal (PIN Required) -->
     <div id="redeemModal" class="modal-overlay">
         <div class="modal-card">
-            <h3 style="margin-top:0; color:#2c3e50;">직원 확인</h3>
+            <h3 style="margin-top:0; color:#2c3e50;">직원 확인 (PIN)</h3>
             <p style="font-size:14px; color:#666; margin-bottom:20px;">
                 <strong id="modalCouponName" style="color:#e67e22;"></strong><br>
-                쿠폰을 사용하시겠습니까?
+                직원이 비밀번호를 입력합니다.
             </p>
 
             <form id="redeemForm" onsubmit="submitRedeem(event)">
                 <input type="hidden" id="modalCouponCode" name="coupon_code">
+                <input type="hidden" id="modalRedeemType" name="redeem_type" value="PIN">
 
                 <div style="text-align:left; font-size:13px; margin-bottom:5px; color:#555;">현재 지점</div>
-                <select id="modalBranch" name="branch" class="styled-input" style="padding:10px; margin-bottom:15px;">
+                <select id="modalBranch" name="branch" class="styled-input"
+                    style="padding:10px; margin-bottom:15px; width:100%;">
                     {% for branch in branch_list %}
                     <option value="{{ branch }}">{{ branch }}</option>
                     {% endfor %}
@@ -245,11 +257,47 @@
         </div>
     </div>
 
+    <!-- Simple Redemption Modal (No PIN) -->
+    <div id="simpleRedeemModal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-top:0; color:#27ae60;">사용 확인</h3>
+            <p style="font-size:14px; color:#666; margin-bottom:20px;">
+                <strong id="simpleModalCouponName" style="color:#27ae60;"></strong><br>
+                직원에게 이미지를 확인 받으셨나요?
+            </p>
+
+            <form id="simpleRedeemForm" onsubmit="submitSimpleRedeem(event)">
+                <input type="hidden" id="simpleModalCouponCode" name="coupon_code">
+
+                <div style="text-align:left; font-size:13px; margin-bottom:5px; color:#555;">현재 지점</div>
+                <select id="simpleModalBranch" name="branch" class="styled-input"
+                    style="padding:10px; margin-bottom:15px; width:100%;">
+                    {% for branch in branch_list %}
+                    <option value="{{ branch }}">{{ branch }}</option>
+                    {% endfor %}
+                </select>
+
+                <p style="font-size:12px; color:#aaa; margin-bottom:15px;">이 작업은 되돌릴 수 없습니다.</p>
+
+                <button type="submit" class="btn-primary" style="margin-top:10px; background-color:#27ae60;">네,
+                    사용합니다</button>
+                <button type="button" class="btn-primary" style="background:#aaa; margin-top:10px;"
+                    onclick="closeSimpleRedeemModal()">취소</button>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // PIN Modal
         const modal = document.getElementById('redeemModal');
         const modalCouponName = document.getElementById('modalCouponName');
         const modalCouponCode = document.getElementById('modalCouponCode');
         const modalPin = document.getElementById('modalPin');
+
+        // Simple Modal
+        const simpleModal = document.getElementById('simpleRedeemModal');
+        const simpleModalCouponName = document.getElementById('simpleModalCouponName');
+        const simpleModalCouponCode = document.getElementById('simpleModalCouponCode');
 
         function openRedeemModal(code, name) {
             modalCouponCode.value = code;
@@ -260,6 +308,43 @@
 
         function closeRedeemModal() {
             modal.style.display = 'none';
+        }
+
+        function openSimpleRedeemModal(code, name) {
+            simpleModalCouponCode.value = code;
+            simpleModalCouponName.innerText = name;
+            simpleModal.style.display = 'flex';
+        }
+
+        function closeSimpleRedeemModal() {
+            simpleModal.style.display = 'none';
+        }
+
+        // Shared API Call Logic
+        async function callRedeemApi(code, pin, branch) {
+            try {
+                const response = await fetch('/reward/redeem-mobile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        coupon_code: code,
+                        staff_pin: pin, // Optional
+                        branch_name: branch
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('성공적으로 사용되었습니다! 🎁');
+                    location.reload();
+                } else {
+                    alert('실패: ' + result.message);
+                }
+            } catch (err) {
+                alert('통신 오류가 발생했습니다.');
+                console.error(err);
+            }
         }
 
         async function submitRedeem(e) {
@@ -274,29 +359,17 @@
                 return;
             }
 
-            try {
-                const response = await fetch('/reward/redeem-mobile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        coupon_code: code,
-                        staff_pin: pin,
-                        branch_name: branch
-                    })
-                });
+            await callRedeemApi(code, pin, branch);
+        }
 
-                const result = await response.json();
+        async function submitSimpleRedeem(e) {
+            e.preventDefault();
 
-                if (result.success) {
-                    alert('성공적으로 사용되었습니다! 🎁');
-                    location.reload(); // 새로고침하여 목록 갱신
-                } else {
-                    alert('실패: ' + result.message);
-                }
-            } catch (err) {
-                alert('통신 오류가 발생했습니다.');
-                console.error(err);
-            }
+            const code = simpleModalCouponCode.value;
+            const branch = document.getElementById('simpleModalBranch').value;
+
+            // PIN 없이 호출
+            await callRedeemApi(code, null, branch);
         }
     </script>
 </body>

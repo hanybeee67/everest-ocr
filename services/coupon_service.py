@@ -139,31 +139,46 @@ def redeem_coupon_service(coupon_code, staff_pin, branch_code):
         return {"success": False, "message": "유효기간이 만료된 쿠폰입니다."}
 
     # 2. 직원 승인 (PIN 검증)
-    # branch_code에 해당하는 직원들 중 PIN이 일치하는 사람이 있는지 확인
-    # (보안상 직원을 먼저 선택하고 PIN을 넣는게 좋지만, 편의상 해당 지점의 어떤 직원이라도 PIN 맞으면 통과)
-    staffs = Staffs.query.filter_by(branch=branch_code).all()
+    # [수정] "플레인 난" 쿠폰(가입 축하)은 PIN 검증 생략 (손님 확인 방식)
+    # 단, branch_code는 필수 (어느 지점에서 썼는지 알아야 함)
+    is_signup_bonus = "플레인 난" in coupon.coupon_type
+    
     valid_staff = None
     
-    for staff in staffs:
-        if bcrypt.checkpw(staff_pin.encode('utf-8'), staff.pin_hash.encode('utf-8')):
-            valid_staff = staff
-            break
-            
-    if not valid_staff:
-        return {"success": False, "message": "직원 인증 실패: PIN 번호가 올바르지 않습니다."}
+    if is_signup_bonus:
+        # PIN 없이 통과. 처리자는 'System' 또는 None
+        pass
+    else:
+        # 일반 리워드는 PIN 필수
+        if not staff_pin:
+             return {"success": False, "message": "직원 PIN 번호를 입력해주세요."}
+             
+        # branch_code에 해당하는 직원들 중 PIN이 일치하는 사람이 있는지 확인
+        # (보안상 직원을 먼저 선택하고 PIN을 넣는게 좋지만, 편의상 해당 지점의 어떤 직원이라도 PIN 맞으면 통과)
+        staffs = Staffs.query.filter_by(branch=branch_code).all()
+        
+        for staff in staffs:
+            if bcrypt.checkpw(staff_pin.encode('utf-8'), staff.pin_hash.encode('utf-8')):
+                valid_staff = staff
+                break
+                
+        if not valid_staff:
+            return {"success": False, "message": "직원 인증 실패: PIN 번호가 올바르지 않습니다."}
+
         
     # 3. 사용 처리
     coupon.status = 'USED'
     coupon.is_used = True
     coupon.used_date = datetime.now()
     coupon.used_at_branch = branch_code
-    coupon.redeemed_by_staff_id = valid_staff.id
+    coupon.redeemed_by_staff_id = valid_staff.id if valid_staff else None # PIN 생략시 None
+
     
     try:
         db.session.commit()
         return {
             "success": True, 
-            "message": f"쿠폰 사용이 완료되었습니다. (처리자: {valid_staff.name})",
+            "message": f"쿠폰 사용이 완료되었습니다. (처리자: {valid_staff.name if valid_staff else '본인 확인'})",
             "coupon": coupon.coupon_type
         }
     except Exception as e:

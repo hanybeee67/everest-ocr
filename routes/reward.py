@@ -113,8 +113,10 @@ def redeem_mobile():
     staff_pin = request.json.get("staff_pin")
     branch_name = request.json.get("branch_name") # '동대문', '영등포' 등 한글 이름
     
-    if not all([coupon_code, staff_pin, branch_name]):
+    # [수정] staff_pin은 이제 필수가 아님 (가입 축하 쿠폰일 경우)
+    if not all([coupon_code, branch_name]):
         return jsonify({"success": False, "message": "필수 정보가 누락되었습니다."}), 400
+
         
     # branch_name(한글) -> branch_code(영문) 매핑 필요
     # models.py나 config에 매핑이 있어야 정확하지만, 
